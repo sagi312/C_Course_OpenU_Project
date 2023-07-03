@@ -29,9 +29,10 @@ struct Table{
 int inTable(char* name, Table* table){
     Table* pointer = table;
     while(pointer->nextCell != NULL){
-        if(strcmp(pointer->cellName, name)){
+        if(!strcmp(pointer->cellName, name)){
             return 1;
         }
+        pointer = pointer->nextCell;
     }
 }
 

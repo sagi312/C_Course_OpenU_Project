@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include "types.h"
+#include <string.h>
+#include "table.h"
 
 /*Input: file pointer
 Output: create .am extended file*/
