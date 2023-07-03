@@ -29,7 +29,7 @@ struct Table{
 int inTable(char* name, Table* table){
     Table* pointer = table;
     while(pointer->nextCell != NULL){
-        if(strcmp(pointer->cellData, name)){
+        if(strcmp(pointer->cellName, name)){
             return 1;
         }
     }
