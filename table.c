@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "table.h"
 
 /*struct TokenLine
@@ -34,10 +35,11 @@ int inTable(char* name, Table* table){
         }
         pointer = pointer->nextCell;
     }
+    return 0;
 }
 
-/*Adds entry to given table. Returns 1 if succeeded, 0 if not.*/
-int addTableEntry(char* name, char* data, Table** table){
+/*Adds entry with text data to given table. Returns 1 if succeeded, 0 if not.*/
+int addTableEntryText(char* name, char* data, Table** table){
     
     /*To loop on table*/
     Table* pointer = *table;
@@ -50,6 +52,37 @@ int addTableEntry(char* name, char* data, Table** table){
     }
     toAdd->cellName = name;
     toAdd->cellData = data;
+    toAdd->nextCell = NULL;
+
+    /*If first entry in table:*/
+    if(*table == NULL){
+        *table = toAdd;
+        return 1;
+    }
+    
+    /*Loop until last cell*/
+    while(pointer->nextCell != NULL){
+        pointer = pointer->nextCell;
+    }
+
+    pointer->nextCell = toAdd;
+    return 1;
+}
+
+/*Adds entry with text data to given table. Returns 1 if succeeded, 0 if not.*/
+int addTableEntryInt(char* name, int data, Table** table){
+    
+    /*To loop on table*/
+    Table* pointer = *table;
+    
+    /*Create cell to add*/
+    Table* toAdd = (Table*) malloc(sizeof(Table));
+    if(!toAdd){
+        fprintf(stderr, "Error: Memory allocation failed.\n");
+        return 0;
+    }
+    toAdd->cellName = name;
+    toAdd->cellData = (void*) data;
     toAdd->nextCell = NULL;
 
     /*If first entry in table:*/

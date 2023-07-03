@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 typedef struct TokenLine TokenLine;
 struct TokenLine
@@ -18,6 +19,7 @@ typedef struct Table Table;
 int inTable(char* name, Table* table);
 
 /*Adds entry to given table. Returns 1 if succeeded, 0 if not.*/
-int addTableEntry(char* name, char* data, Table** table);
+int addTableEntryText(char* name, char* data, Table** table);
+int addTableEntryInt(char* name, int data, Table** table);
 
 

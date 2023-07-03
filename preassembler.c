@@ -6,22 +6,22 @@ Table* instructionTable;
 /*Input: file pointer
 Output: create .am extended file*/
 int preAssemble(FILE* file){
-    addTableEntry("mov", 0, &instructionTable);
-    addTableEntry("cmp", 1, &instructionTable);
-    addTableEntry("add", 2, &instructionTable);
-    addTableEntry("sub", 3, &instructionTable);
-    addTableEntry("not", 4, &instructionTable);
-    addTableEntry("clr", 5, &instructionTable);
-    addTableEntry("lea", 6, &instructionTable);
-    addTableEntry("inc", 7, &instructionTable);
-    addTableEntry("dec", 8, &instructionTable);
-    addTableEntry("jmp", 9, &instructionTable);
-    addTableEntry("bne", 10, &instructionTable);
-    addTableEntry("red", 11, &instructionTable);
-    addTableEntry("prn", 12, &instructionTable);
-    addTableEntry("jsr", 13, &instructionTable);
-    addTableEntry("rts", 14, &instructionTable);
-    addTableEntry("stop", 15, &instructionTable);
+    addTableEntryInt("mov", 0, &instructionTable);
+    addTableEntryInt("cmp", 1, &instructionTable);
+    addTableEntryInt("add", 2, &instructionTable);
+    addTableEntryInt("sub", 3, &instructionTable);
+    addTableEntryInt("not", 4, &instructionTable);
+    addTableEntryInt("clr", 5, &instructionTable);
+    addTableEntryInt("lea", 6, &instructionTable);
+    addTableEntryInt("inc", 7, &instructionTable);
+    addTableEntryInt("dec", 8, &instructionTable);
+    addTableEntryInt("jmp", 9, &instructionTable);
+    addTableEntryInt("bne", 10, &instructionTable);
+    addTableEntryInt("red", 11, &instructionTable);
+    addTableEntryInt("prn", 12, &instructionTable);
+    addTableEntryInt("jsr", 13, &instructionTable);
+    addTableEntryInt("rts", 14, &instructionTable);
+    addTableEntryInt("stop", 15, &instructionTable);
 
     return 0;
 }
