@@ -2,26 +2,34 @@
 #include <string.h>
 #include "table.h"
 
-Table* instructionTable;
+Table* invalidTable;
 /*Input: file pointer
 Output: create .am extended file*/
 int preAssemble(FILE* file){
-    addTableEntryInt("mov", 0, &instructionTable);
-    addTableEntryInt("cmp", 1, &instructionTable);
-    addTableEntryInt("add", 2, &instructionTable);
-    addTableEntryInt("sub", 3, &instructionTable);
-    addTableEntryInt("not", 4, &instructionTable);
-    addTableEntryInt("clr", 5, &instructionTable);
-    addTableEntryInt("lea", 6, &instructionTable);
-    addTableEntryInt("inc", 7, &instructionTable);
-    addTableEntryInt("dec", 8, &instructionTable);
-    addTableEntryInt("jmp", 9, &instructionTable);
-    addTableEntryInt("bne", 10, &instructionTable);
-    addTableEntryInt("red", 11, &instructionTable);
-    addTableEntryInt("prn", 12, &instructionTable);
-    addTableEntryInt("jsr", 13, &instructionTable);
-    addTableEntryInt("rts", 14, &instructionTable);
-    addTableEntryInt("stop", 15, &instructionTable);
+    addTableEntryInt("mov", 0, &invalidTable);
+    addTableEntryInt("cmp", 0, &invalidTable);
+    addTableEntryInt("add", 0, &invalidTable);
+    addTableEntryInt("sub", 0, &invalidTable);
+    addTableEntryInt("not", 0, &invalidTable);
+    addTableEntryInt("clr", 0, &invalidTable);
+    addTableEntryInt("lea", 0, &invalidTable);
+    addTableEntryInt("inc", 0, &invalidTable);
+    addTableEntryInt("dec", 0, &invalidTable);
+    addTableEntryInt("jmp", 0, &invalidTable);
+    addTableEntryInt("bne", 0, &invalidTable);
+    addTableEntryInt("red", 0, &invalidTable);
+    addTableEntryInt("prn", 0, &invalidTable);
+    addTableEntryInt("jsr", 0, &invalidTable);
+    addTableEntryInt("rts", 0, &invalidTable);
+    addTableEntryInt("stop", 0, &invalidTable);
+    addTableEntryInt("mcro", 0, &invalidTable);
+    addTableEntryInt("endmcro", 0, &invalidTable);
+    addTableEntryInt(".data", 0, &invalidTable);
+    addTableEntryInt(".entry", 0, &invalidTable);
+    addTableEntryInt(".extern", 0, &invalidTable);
+    addTableEntryInt(".string", 0, &invalidTable);
+
+
 
     return 0;
 }
@@ -30,18 +38,19 @@ int preAssemble(FILE* file){
 Output: 1 if line is mcro start and valid, 0 if not*/
 int checkMacro(TokenLine* line, int inMacro){
     if(inMacro){
-        fprintf(stderr, "Error: nested macros aren't allowed.\n");
+        fprintf(stderr, "Error: nested macros aren't allowed, line %d.\n", line->lineNumber);
         return 0;
     }
     if(!strcmp(line->firstField, "mcro")){
-        if(inTable(line->secondField, instructionTable)){
+        if(inTable(line->secondField, invalidTable)){
             fprintf(stderr, "Error: macro name isn't valid, line %d.\n", line->lineNumber);
             return 0;
         }
-        else{
-            addMacroTableEntry(line->secondField);
-            return 1;
+        else if(line->thirdField != NULL || line->forthField != NULL || line->extra != NULL){
+            fprintf(stderr, "Error: extra text after macro start, line %d.\n", line->lineNumber);
+            return 0;
         }
+        return 1;
     }
     else{ /*Not a macro*/
         return 0;
@@ -51,7 +60,19 @@ int checkMacro(TokenLine* line, int inMacro){
 /*Input: tokenLine
 Output: 1 if line is mcro end and valid, 0 if not*/
 int checkEndMacro(TokenLine* line, int inMcro){
-
+    if(!inMcro){
+        fprintf(stderr, "Error: macro end without start of macro, line %d.\n", line->lineNumber);
+        return 0;
+    }
+    if(!strcmp(line->firstField, "endmcro")){
+        if(line->secondField != NULL || line->thirdField != NULL || line->forthField != NULL || line->extra != NULL){
+            fprintf(stderr, "Error: extra text after macro end, line %d.\n", line->lineNumber);
+        }
+        return 1;
+    }
+    else{ /*Not ending a macro*/
+        return 0;
+    }
 }
 
 /*Input: mcro name
