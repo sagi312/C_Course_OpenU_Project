@@ -1,5 +1,6 @@
 typedef struct TokenLine
 {
+    int lineNumber;
     char* firstField;
     char* secondField;
     char* thirdField;
@@ -12,3 +13,9 @@ typedef struct MacroTable{
     char* macroData;
     MacroTable* nextMacro;
 } MacroTable;
+
+typedef struct Table{
+    char* cellName;
+    char* cellData;
+    Table* nextCell;
+} Table;
