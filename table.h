@@ -2,24 +2,18 @@
 #include <string.h>
 #include <stdlib.h>
 
-typedef struct TokenLine TokenLine;
-struct TokenLine
-{
-    int lineNumber;
-    char* firstField;
-    char* secondField;
-    char* thirdField;
-    char* forthField;
-    char* extra;
-};
-typedef struct MacroTable MacroTable;
+#ifndef TABLE_H
+#define TABLE_H
 typedef struct Table Table;
+#endif
 
-/*Return 1 if name is in given table, 0 if not.*/
+/*Table operations*/
+Table* createTable(void);
+int addCell(char* name, Table* table);
+int setCellData(char* name, char* data, Table* table);
+char* getCellData(char* name, Table* table);
+int removeCell(char* name, Table* table);
 int inTable(char* name, Table* table);
-
-/*Adds entry to given table. Returns 1 if succeeded, 0 if not.*/
-int addTableEntryText(char* name, char* data, Table** table);
-int addTableEntryInt(char* name, int data, Table** table);
-
-
+int getTableSize(Table* table);
+int freeTable(Table* table);
+int printTable(Table* table);
