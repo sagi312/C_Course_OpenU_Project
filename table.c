@@ -209,6 +209,7 @@ int printTable(Table* table) {
         return 0;
     }
 
+    /*TODO: print pretty if there are linebreaks*/
     printf("\nName\tData\n");
     while(pointer != NULL){
         if(pointer->cellData != NULL)
