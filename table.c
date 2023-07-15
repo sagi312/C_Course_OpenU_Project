@@ -5,13 +5,14 @@
 
 struct Table{
     char* cellName;
-    void* cellData;
+    char* cellData;
     struct Table* nextCell;
 };
 
 
 Table* createTable(void) {
     Table* table = (Table*) malloc(sizeof(Table));
+    
     if(!table){
         fprintf(stderr, "Error: Memory allocation failed.\n");
         return NULL;
@@ -27,18 +28,18 @@ Table* createTable(void) {
     }
 
     return table;
-};
+}
 
 int addCell(char* name, Table* table) {
+    /*To loop on table*/
+    Table* pointer = table;
+    Table* toAdd = (Table*) malloc(sizeof(Table));
+    
     if(table == NULL){
         return 0;
     }
     
-    /*To loop on table*/
-    Table* pointer = table;
-    
     /*Create cell to add*/
-    Table* toAdd = (Table*) malloc(sizeof(Table));
     if(!toAdd){
         fprintf(stderr, "Error: Memory allocation failed.\n");
         return 0;
@@ -49,7 +50,7 @@ int addCell(char* name, Table* table) {
     
     if(table->cellName == NULL){
         fprintf(stderr, "Error: Memory allocation failed.\n");
-        return NULL;
+        return 0;
     }
 
     /*Loop until last cell*/
@@ -62,12 +63,12 @@ int addCell(char* name, Table* table) {
 }
 
 int setCellData(char* name, char* data, Table* table){
+    /*To loop on table*/
+    Table* pointer = table;
+    
     if(table == NULL){
         return 0;
     }
-    
-    /*To loop on table*/
-    Table* pointer = table;
     
     /*Loop until last cell or found entry*/
     while(pointer != NULL){
@@ -90,13 +91,14 @@ int setCellData(char* name, char* data, Table* table){
 char* getCellData(char* name, Table* table) {
     /*Return copy of string for saftey and enacpsulation*/
     static char* res = NULL;
-    
+    /*To loop on table*/
+    Table* pointer = table;
+
     if(table == NULL){
         return NULL;
     }
     
-    /*To loop on table*/
-    Table* pointer = table;
+    
     
     /*Loop until last cell or found entry*/
     while(pointer != NULL){
@@ -111,12 +113,12 @@ char* getCellData(char* name, Table* table) {
 }
 
 int removeCell(char* name, Table* table){
+    /*To loop on table*/
+    Table* pointer = table;
+    
     if(table == NULL){
         return 0;
     }
-
-    /*To loop on table*/
-    Table* pointer = table;
 
     /*Loop until second last cell or found entry*/
     while(pointer->nextCell->nextCell != NULL){
@@ -143,12 +145,12 @@ int removeCell(char* name, Table* table){
 }
 
 int inTable(char* name, Table* table) {
+    /*To loop on table*/
+    Table* pointer = table;
+
     if(table == NULL){
         return 0;
     }
-    
-    /*To loop on table*/
-    Table* pointer = table;
     
     /*Loop until last cell or found entry*/
     while(pointer != NULL){
@@ -162,13 +164,13 @@ int inTable(char* name, Table* table) {
 }
 
 int getTableSize(Table* table) {
-    if(table == NULL){
-        return 0;
-    }
-    
     /*To loop on table*/
     Table* pointer = table;
     int size = 0;
+
+    if(table == NULL){
+        return 0;
+    }
     
     /*Loop until last cell*/
     while(pointer != NULL){
@@ -181,12 +183,12 @@ int getTableSize(Table* table) {
 }
 
 int freeTable(Table* table) {
+    Table* thisCell = table;
+    Table* lastCell = table;
+
     if(table == NULL){
         return 0;
     }
-
-    Table* thisCell = table;
-    Table* lastCell = table;
 
     while(thisCell != NULL){
         lastCell = thisCell;
@@ -200,18 +202,31 @@ int freeTable(Table* table) {
 }
 
 int printTable(Table* table) {
+    /*Skip header*/
+    Table* pointer = table->nextCell;
+
     if(table == NULL){
         return 0;
     }
 
-    /*Skip header*/
-    Table* pointer = table->nextCell;
-
     printf("\nName\tData\n");
     while(pointer != NULL){
-        printf("%s:\t%s\n", pointer->cellName, pointer->cellData);
+        if(pointer->cellData != NULL)
+            printf("%s:\t%s\n", pointer->cellName, pointer->cellData);
+        else
+            printf("%s:\n", pointer->cellName);
         pointer = pointer->nextCell;
     }
     printf("\n");
     return 1;
+}
+
+char* strdup(char* str){
+    char* des = (char*) malloc(strlen(str)+1);
+    if(des == NULL){
+        fprintf(stderr, "Error: Memory allocation failed.\n");
+        return NULL;
+    }
+    strcpy(des, str);
+    return des;
 }

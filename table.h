@@ -17,3 +17,5 @@ int inTable(char* name, Table* table);
 int getTableSize(Table* table);
 int freeTable(Table* table);
 int printTable(Table* table);
+
+char* strdup(char* str); /*TO DO: move to other file. Helper functions?*/
