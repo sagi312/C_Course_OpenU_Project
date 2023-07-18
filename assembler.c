@@ -12,10 +12,8 @@ int main(int argc, char* argv[]){
 
 int testInput(void){
     FILE* file = openFile("test.txt");
-    char* line, *line2, name;
+    char* line, *line2;
     TokenLine* tokenLine;
-    Table* table;
-    int i;
 
     line = readLine(file);
     printf("Read: %s\n", line);

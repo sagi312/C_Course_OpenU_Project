@@ -114,9 +114,10 @@ int writeFileFromTableData(FILE* file, Table* table, int doRewind){
 }
 
 char* getTokenField(int num, TokenLine* line) {
+    char* res;
     if(num < 0 || num > NUMBER_OF_FIELDS-1)
         return NULL;
-    char* res = strdup(line->fields[num]);
+    res = strdup(line->fields[num]);
     return res;
 }
 
