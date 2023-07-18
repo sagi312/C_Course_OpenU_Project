@@ -1,37 +1,41 @@
 #include <stdio.h>
 #include "table.h"
+#include "inputOutput.h"
 
 
 int testTable(void);
 int main(int argc, char* argv[]){
-    testTable();
+    testInput();
     return 0;
     /*return preAssemble(NULL);*/
 }
 
-int testTable(void){
-    Table* table = createTable();
-    printf("Table created\n");
-    addCell("test", table);
-    printf("Entry added\n");
-    addCell("test2", table);
-    printf("Entry added\n");
-    printTable(table);
-    printf("Table printed\n");
-    setCellData("test", "data\n\ndatata\n\n10010101", table);
-    printf("Data set\n");
-    setCellData("test2", "10", table);
-    printf("Data set\n");
-    printTable(table);
-    printf("test cell contains %s\n", getCellData("test", table));
-    printf("test in table %d\n", inTable("test", table));
-    printf("non in table %d\n", inTable("non", table));
-    printf("Table size %d\n", getTableSize(table));
-    removeCell("test", table);
-    printf("Entry removed\n");
-    printTable(table);
-    freeTable(table);
-    printf("Table freed\n");
-    printTable(table);
+int testInput(void){
+    FILE* file = openFile("test.txt");
+    char* line, *line2, name;
+    TokenLine* tokenLine;
+    Table* table;
+    int i;
+
+    line = readLine(file);
+    printf("Read: %s\n", line);
+    line2 = readLine(file);
+    printf("Read: %s\n", line2);
+    tokenLine = tokenizeLine(line, 1);
+    printTokenLine(tokenLine);
+    printf("Line number: %d\n", getLineNumber(tokenLine));
+    printf("Field 1: %s\n", getTokenField(0, tokenLine));
+    printf("Field 2: %s\n", getTokenField(1, tokenLine));
+    printf("Field 3: %s\n", getTokenField(2, tokenLine));
+    printf("Field 4: %s\n", getTokenField(3, tokenLine));
+    printf("Extra: %s\n", getTokenField(4, tokenLine));
+    
+    freeTokenLine(tokenLine);
+    closeFile(file);
+    free(line);
+    free(line2);
+    printTokenLine(tokenLine);
+    printf("Done.\n");
+
     return 1;
 }

@@ -98,14 +98,35 @@ char* getCellData(char* name, Table* table) {
         return NULL;
     }
     
-    
-    
     /*Loop until last cell or found entry*/
     while(pointer != NULL){
         if(!strcmp(pointer->cellName, name)){
             return res = strdup(pointer->cellData);
         }
         pointer = pointer->nextCell;
+    }
+
+    fprintf(stderr, "Error: Entry not found.\n");
+    return NULL;
+}
+
+char* getCellName(int index, Table* table){
+    /*Return copy of string for saftey and enacpsulation*/
+    static char* res = NULL;
+    /*To loop on table and skip header*/
+    Table* pointer = table->nextCell;
+
+    if(table == NULL){
+        return NULL;
+    }
+    
+    /*Loop until last cell or found entry*/
+    while(pointer != NULL){
+        if(index == 0){
+            return res = strdup(pointer->cellName);
+        }
+        pointer = pointer->nextCell;
+        index--;
     }
 
     fprintf(stderr, "Error: Entry not found.\n");
@@ -189,12 +210,13 @@ int freeTable(Table* table) {
     if(table == NULL){
         return 0;
     }
-
     while(thisCell != NULL){
         lastCell = thisCell;
         thisCell = thisCell->nextCell;
-        free(lastCell->cellName);
-        free(lastCell->cellData);
+        if(lastCell->cellName != NULL)
+            free(lastCell->cellName);
+        if(lastCell->cellData != NULL)
+            free(lastCell->cellData);
         free(lastCell);
     }
 
@@ -223,7 +245,11 @@ int printTable(Table* table) {
 }
 
 char* strdup(char* str){
-    char* des = (char*) malloc(strlen(str)+1);
+    char* des;
+    if(str == NULL){
+        return NULL;
+    }
+    des = (char*) malloc(strlen(str)+1);
     if(des == NULL){
         fprintf(stderr, "Error: Memory allocation failed.\n");
         return NULL;
