@@ -53,3 +53,8 @@ dkms.conf
 
 # VSCode
 .vscode
+
+#assembler output
+assembler
+*.txt
+core
