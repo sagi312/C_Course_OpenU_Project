@@ -56,3 +56,5 @@ dkms.conf
 
 #assembler output
 assembler
+*.txt
+core
