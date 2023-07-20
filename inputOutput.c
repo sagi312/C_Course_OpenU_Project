@@ -10,36 +10,26 @@ struct TokenLine
     char* fields[NUMBER_OF_FIELDS];
 };
 
-FILE* openFile(char* name) {
-    FILE* file = fopen(name, "r+");
-    if(file == NULL) {
-        file = fopen(name, "w+");
-    }
-    return file;
-}
-
-int closeFile(FILE* file){
-    fclose(file);
-    return 1;
-}
-
 char* readLine(FILE* file){
-    int i, size = 0;
+    int i, size = 1;
     char *tmp, *buffer;
     char c;
 
     /*Initialize buffer*/
-    if(size == 0){
-        buffer = malloc(sizeof(char));
-        size = 1;
+    
+    buffer = malloc(sizeof(char));
+    if(buffer == NULL){
+        fprintf(stderr, "Error: Memory allocation failed.\n");
+        free(buffer);
+        return 0;
     }
 
     /*Read until next line or end of file*/
-    for (i = 0;(c=getc(file)) != '\n' && c != EOF; i++){
+    for (i = 0;(c=getc(file)) != '\n' && c != EOF && c != '\r'; i++){
         if(i == size){
             tmp = realloc(buffer, (++size)*sizeof(char));
             if(tmp == NULL){
-                printf("Error: Memory allocation failed.\n");
+                fprintf(stderr, "Error: Memory allocation failed.\n");
                 free(tmp);
                 free(buffer);
                 return 0;
@@ -48,12 +38,15 @@ char* readLine(FILE* file){
         }
         buffer[i] = c;
     }
-
+    /*skip \r. Only if file was generated in windows*/
+    if(c == '\r'){
+        c = getc(file);
+    }
     /*Add null terminator*/
     if(i == size){
         tmp = realloc(buffer, (++size)*sizeof(char));
         if(tmp == NULL){
-            printf("Error: Memory allocation failed\n");
+            fprintf(stderr, "Error: Memory allocation failed\n");
             free(tmp);
             free(buffer);
             return 0;
@@ -67,14 +60,22 @@ char* readLine(FILE* file){
 TokenLine* tokenizeLine(char* line, int lineNumber) {
     TokenLine* tokens = malloc(sizeof(TokenLine));
     int i = 0;
+    char *tmp;
 
+    if(tokens == NULL){
+        fprintf(stderr, "Error: Memory allocation failed.\n");
+        free(tokens);
+        return NULL;
+    }
+
+    tmp = strdup(line);
     tokens->lineNumber = lineNumber;
 
-    tokens->fields[0] = strdup(strtok(line, " \t"));
+    tokens->fields[0] = strdup(strtok(tmp, " \t"));
     while(i < NUMBER_OF_FIELDS && tokens->fields[i] != NULL) {
-        i++;
-        tokens->fields[i] = strdup(strtok(NULL, " \t"));
+        tokens->fields[++i] = strdup(strtok(NULL, " \t"));
     }
+    free(tmp);
     return tokens;
 }
 
@@ -88,10 +89,18 @@ int freeTokenLine(TokenLine* line){
 }
 
 int printTokenLine(TokenLine* line){
-    /*TODO: add support for more fields*/
+    int i;
     printf("Line number: %d\n", line->lineNumber);
-    printf("1\t\t2\t\t3\t\t4\n");
-    printf("%s\t\t%s\t\t%s\t\t%s\n", line->fields[0], line->fields[1], line->fields[2], line->fields[3]);
+    for(i = 0; i < NUMBER_OF_FIELDS; i++){
+        if(line->fields[i] != NULL)
+            printf("%d\t\t", i);
+    }
+    printf("\n");
+    for(i = 0; i < NUMBER_OF_FIELDS; i++){
+        if(line->fields[i] != NULL)
+            printf("%s\t\t", line->fields[i]);
+    }
+    printf("\n");
     return 1;
 }
 
@@ -107,7 +116,8 @@ int writeFileFromTableData(FILE* file, Table* table, int doRewind){
     for(i = 0; i < tableSize; i++){
         cellName = getCellName(i, table);
         cellData = getCellData(cellName, table);
-        fprintf(file, "%s\n", cellData);
+        if(cellData != NULL)
+            fprintf(file, "%s\n", cellData);
     }
     fflush(file);
     return 1;
@@ -123,4 +133,15 @@ char* getTokenField(int num, TokenLine* line) {
 
 int getLineNumber(TokenLine* line) {
     return line->lineNumber;
+}
+
+char* strip(char* line){
+    int i = 0;
+    char* res;
+
+    while(line[i] == ' ' || line[i] == '\t'){
+        i++;
+    }
+    res = strdup(line + i);
+    return res;
 }

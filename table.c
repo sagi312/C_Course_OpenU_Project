@@ -82,7 +82,6 @@ int setCellData(char* name, char* data, Table* table){
         }
         pointer = pointer->nextCell;
     }
-
     fprintf(stderr, "Error: Entry not found.\n");
     return 1;
 
@@ -90,7 +89,7 @@ int setCellData(char* name, char* data, Table* table){
 
 char* getCellData(char* name, Table* table) {
     /*Return copy of string for saftey and enacpsulation*/
-    static char* res = NULL;
+    char* res = NULL;
     /*To loop on table*/
     Table* pointer = table;
 
@@ -106,6 +105,8 @@ char* getCellData(char* name, Table* table) {
         pointer = pointer->nextCell;
     }
 
+    printf("Didn't find %s\n",name);
+    printf("But %d in table\n", inTable(name, table));
     fprintf(stderr, "Error: Entry not found.\n");
     return NULL;
 }

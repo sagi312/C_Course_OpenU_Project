@@ -1,6 +1,6 @@
 FLAGS = -Wall -ansi -pedantic -g
 
-assembler: assembler.o table.o inputOutput.o
+assembler: assembler.o table.o inputOutput.o preassembler.o
 	gcc -o assembler $(FLAGS) $^ -lm 
 
 assembler.o: assembler.c table.h inputOutput.h

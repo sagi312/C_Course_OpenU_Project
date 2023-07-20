@@ -6,7 +6,6 @@
 typedef struct TokenLine TokenLine;
 #endif
 
-FILE* openFile(char* name);
 char* readLine(FILE* file);
 TokenLine* tokenizeLine(char* line, int lineNumber);
 int writeFileFromTableData(FILE* file, Table* table, int doRewind);
@@ -15,3 +14,5 @@ int getLineNumber(TokenLine* line);
 int freeTokenLine(TokenLine* line);
 int printTokenLine(TokenLine* line);
 int closeFile(FILE* file);
+char* mystrtok(char* str, char* delim, char** rest);
+char* strip(char*);
