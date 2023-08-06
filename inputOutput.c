@@ -10,6 +10,9 @@ struct TokenLine
     char* fields[NUMBER_OF_FIELDS];
 };
 
+/*Use to keep track if there was an error printed*/
+int errorFlag = 0;
+
 char* readLine(FILE* file){
     int i, size = 1;
     char *tmp, *buffer;
@@ -82,7 +85,8 @@ TokenLine* tokenizeLine(char* line, int lineNumber) {
 int freeTokenLine(TokenLine* line){
     int i;
     for(i = 0; i < NUMBER_OF_FIELDS; i++){
-        free(line->fields[i]);
+        if(line->fields[i] != NULL)
+            free(line->fields[i]);
     }
     free(line);
     return 1;
@@ -107,8 +111,7 @@ int printTokenLine(TokenLine* line){
 int writeFileFromTableData(FILE* file, Table* table, int doRewind){
     int tableSize = getTableSize(table);
     int i;
-    char* cellName;
-    char* cellData;
+    char *cellName, *cellData;
 
     if(doRewind)
         rewind(file);
@@ -144,4 +147,15 @@ char* strip(char* line){
     }
     res = strdup(line + i);
     return res;
+}
+
+void printError(char* error, int lineNumber) {
+    errorFlag = 1;
+    if(lineNumber == -1)
+        fprintf(stderr, "Error: %s\n", error);
+    else
+        fprintf(stderr, "Error: %s. In line %d\n", error, lineNumber);
+}
+int hasErrors(void) {
+    return errorFlag;
 }

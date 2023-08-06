@@ -16,3 +16,5 @@ int printTokenLine(TokenLine* line);
 int closeFile(FILE* file);
 char* mystrtok(char* str, char* delim, char** rest);
 char* strip(char*);
+void printError(char* error, int lineNumber);
+int hasErrors(void);
