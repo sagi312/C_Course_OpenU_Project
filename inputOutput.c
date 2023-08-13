@@ -19,8 +19,7 @@ char* readLine(FILE* file){
     
     buffer = malloc(sizeof(char));
     if(buffer == NULL){
-        fprintf(stderr, "Error: Memory allocation failed.\n");
-        free(buffer);
+        printError("Memory allocation failed", -1);
         return 0;
     }
 
@@ -46,8 +45,7 @@ char* readLine(FILE* file){
     if(i == size){
         tmp = realloc(buffer, (++size)*sizeof(char));
         if(tmp == NULL){
-            fprintf(stderr, "Error: Memory allocation failed\n");
-            free(tmp);
+            printError("Memory allocation failed", -1);
             free(buffer);
             return 0;
         }
@@ -63,7 +61,7 @@ TokenLine* tokenizeLine(char* line, int lineNumber) {
     char *tmp;
     
     if(tokens == NULL){
-        fprintf(stderr, "Error: Memory allocation failed.\n");
+        printError("Memory allocation failed", -1);
         free(tokens);
         return NULL;
     }
