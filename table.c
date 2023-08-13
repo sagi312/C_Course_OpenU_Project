@@ -258,3 +258,23 @@ char* strdup(char* str){
     strcpy(des, str);
     return des;
 }
+
+int connectTables(Table* dest, Table* copy){
+    Table* pointer = dest;
+
+    if(dest == NULL || copy == NULL || dest->nextCell == NULL){
+        return EXIT_FAILURE;
+    }
+
+    while(pointer->nextCell != NULL)
+        pointer = pointer->nextCell;
+    
+    pointer->nextCell = copy->nextCell;
+
+    /*Free header of copy table*/
+    free(copy->cellData);
+    free(copy->cellName);
+    free(copy);   
+     
+    return EXIT_SUCCESS;
+}
