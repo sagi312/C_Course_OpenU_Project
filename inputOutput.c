@@ -64,19 +64,25 @@ TokenLine* tokenizeLine(char* line, int lineNumber) {
     TokenLine* tokens = malloc(sizeof(TokenLine));
     int i = 0;
     char *tmp;
-
+    
     if(tokens == NULL){
         fprintf(stderr, "Error: Memory allocation failed.\n");
         free(tokens);
         return NULL;
     }
-
+    
     tmp = strdup(line);
     tokens->lineNumber = lineNumber;
-
+    
     tokens->fields[0] = strdup(strtok(tmp, " \t"));
-    while(i < NUMBER_OF_FIELDS && tokens->fields[i] != NULL) {
+    while(i < NUMBER_OF_FIELDS-1 && tokens->fields[i] != NULL) {
         tokens->fields[++i] = strdup(strtok(NULL, " \t"));
+    }
+    if(i != NUMBER_OF_FIELDS-1){
+        tokens->fields[i] = strdup(strtok(NULL, ""));
+        while(i < NUMBER_OF_FIELDS){
+            tokens->fields[++i] = NULL;
+        }
     }
     free(tmp);
     return tokens;
@@ -128,6 +134,7 @@ int writeFileFromTableData(FILE* file, Table* table, int doRewind){
 
 char* getTokenField(int num, TokenLine* line) {
     char* res;
+    printTokenLine(line);
     if(num < 0 || num > NUMBER_OF_FIELDS-1)
         return NULL;
     res = strdup(line->fields[num]);
