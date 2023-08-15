@@ -3,6 +3,7 @@
 #include "inputOutput.h"
 #include "preassembler.h"
 #include "firstPass.h"
+#include "typeChecker.h"
 
 
 int testPreAssemble(void);
@@ -16,9 +17,10 @@ int main(int argc, char* argv[]){
 }  
 
 int testFirstPass(void) {
-    FILE* file = fopen("test.txt", "r");
+    FILE* file = fopen("test2.txt", "r");
     Table* opTable = createTable(), *codeSymbolTable = createTable(), *dataSymbolTable = createTable();
     TokenLine* tokens;
+    InstructionType type;
     char *opNames[] = OP_NAMES, *line;
     int i, labelFlag;
 
@@ -34,15 +36,26 @@ int testFirstPass(void) {
     while(line != NULL && strlen(line) > 0){
         printf("%s\n", line);
         i++;
-        tokens = tokenizeLine(line, 0);
-        if(isComment(tokens))
-            printf("Line %d is a comment.\n", i);
+        tokens = tokenizeLine(line, i);
+
         if(hasLabel(tokens, codeSymbolTable, dataSymbolTable) != 0) {
-            printf("Line %d is a label.\n", i);
+            printf("Line %d has a label.\n", i);
             labelFlag = 1;
         }
-        if(hasOp(tokens, opTable, labelFlag))
+        type = getInstructType(tokens, codeSymbolTable, dataSymbolTable, labelFlag);
+        if(type == Comment)
+            printf("Line %d is a comment.\n", i);
+        
+        if(type == Op)
             printf("Line %d is an op.\n", i);
+        else if(type == Data)
+            printf("Line %d is a data.\n", i);
+        else if(type == String)
+            printf("Line %d is a string.\n", i);
+        else if(type == Extern)
+            printf("Line %d is an extern.\n", i);
+
+        printf("The word count of this line is %d\n\n", getWordCount(tokens, type, labelFlag));
         freeTokenLine(tokens);
         free(line);
         labelFlag = 0;
