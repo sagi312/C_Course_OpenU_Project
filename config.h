@@ -7,4 +7,11 @@
 #define OP_NAMES {"mov", "cmp", "add", "sub", "not", "clr", "lea", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop"}
 #define OP_NAMES_COUNT 16
 
+#define OP_GROUP1 {"mov", "cmp", "add", "sub", "lea"}
+#define OP_GROUP1_COUNT 5
+#define OP_GROUP2 {"not", "clr", "inc", "dec", "jmp", "bne", "red", "prn", "jsr"}
+#define OP_GROUP2_COUNT 9
+#define OP_GROUP3 {"rts", "stop"}
+#define OP_GROUP3_COUNT 2
+
 #endif
