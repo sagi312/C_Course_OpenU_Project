@@ -18,7 +18,7 @@ int main(int argc, char* argv[]){
 
 int testFirstPass(void) {
     FILE* file = fopen("test2.txt", "r");
-    Table* opTable = createTable(), *codeSymbolTable = createTable(), *dataSymbolTable = createTable();
+    Table* opTable = createTable(), *codeSymbolTable = createTable(), *dataSymbolTable = createTable(), *dataTable = createTable();
     TokenLine* tokens;
     InstructionType type;
     char *opNames[] = OP_NAMES, *line;
@@ -48,8 +48,12 @@ int testFirstPass(void) {
         
         if(type == Op)
             printf("Line %d is an op.\n", i);
-        else if(type == Data)
+        else if(type == Data) {
             printf("Line %d is a data.\n", i);
+            printf("Trying to add data\n");
+            addData(tokens, dataTable, labelFlag);
+            printTable(dataTable);
+        }
         else if(type == String)
             printf("Line %d is a string.\n", i);
         else if(type == Extern)
@@ -61,6 +65,7 @@ int testFirstPass(void) {
         labelFlag = 0;
         line = readLine(file);
     }
+
 
     return 0;
 }
