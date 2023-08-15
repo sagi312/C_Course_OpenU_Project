@@ -105,15 +105,13 @@ char* getCellData(char* name, Table* table) {
         pointer = pointer->nextCell;
     }
 
-    printf("Didn't find %s\n",name);
-    printf("But %d in table\n", inTable(name, table));
     fprintf(stderr, "Error: Entry not found.\n");
     return NULL;
 }
 
 char* getCellName(int index, Table* table){
     /*Return copy of string for saftey and enacpsulation*/
-    static char* res = NULL;
+    char* res = NULL;
     /*To loop on table and skip header*/
     Table* pointer = table->nextCell;
 
