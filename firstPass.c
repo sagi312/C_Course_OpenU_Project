@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <math.h>
 #include "firstPass.h"
 #include "table.h"
 #include "inputOutput.h"
 #include "config.h"
 #include "typeChecker.h"
+#define NUMBER_OF_DIGITS(x) (int)(ceil(log10(x))+1)
 
 /*problems  - easy way to find patterns, regex?
             - complicated data handeling with tables, memory leaks
@@ -42,7 +44,7 @@ firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
             else
                 printWarning("Data declaration without a label", i);
             dc += getWordCount(tokens, Data, labelFlag);
-            addData(tokens, dataTable);
+            addData(tokens, dataTable, labelFlag);
         }
 
         /*Check if the line is a .string line*/
@@ -179,8 +181,44 @@ getStringWordCount(tokens, labelFlag) {
 }
 
 /*Add data to the data table*/
-addData(TokenLine* tokens, Table* dataTable) {
-    return 0;
+addData(TokenLine* tokens, Table* dataTable, int labelFlag) {
+    char *parmString, *parm, *cellName, *cellData;
+    int num, lastCell;
+    if(labelFlag)
+        parmString = getParmString(1, tokens);
+    else
+        parmString = getParmString(0, tokens);
+
+    if(parmString == NULL)
+        return EXIT_FAILURE;
+
+    printf("Parm is %s\n", parmString);
+
+    /*Get last cell name*/
+    lastCell = getTableSize(dataTable);
+
+    /*Initilize strtok*/
+    parm = strtok(parmString, ", \t");
+    cellName = malloc(sizeof(char) * (NUMBER_OF_DIGITS(lastCell) + 1));
+    sprintf(cellName, "%d", lastCell);
+    while(parm != NULL) {
+        num = atoi(parm);
+        if(num > MAX_NUM || num < MIN_NUM) {
+            printError("Number out of range in data declaration", getLineNumber(tokens));
+            return EXIT_FAILURE;
+        }
+        cellData = itob(num);
+        addCell(cellName, dataTable);
+        setCellData(cellName, cellData, dataTable);
+
+        free(cellData);
+        free(cellName);
+        lastCell++;
+        cellName = malloc(sizeof(char) * (NUMBER_OF_DIGITS(lastCell) + 1));
+        sprintf(cellName, "%d", lastCell);
+        parm = strtok(NULL, ", \t");
+    }
+    return EXIT_SUCCESS;
 }
 /*Add string to the data table*/
 addString(TokenLine* tokens, Table* dataTable) {
@@ -217,6 +255,8 @@ char* getParmString(int lastField, TokenLine* tokens) {
             return NULL;
         }
         strcat(parmString, nextField);
+        printf("Next field string is %s\n", nextField);
+        free(nextField);
     }
     return parmString;
 }

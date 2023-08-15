@@ -10,7 +10,7 @@ int firstPass(FILE* file, Table* symbolTable, Table* fileTable);
 /*Get the number of words the data/code will take up in final file*/
 int getWordCount(TokenLine* tokens, InstructionType type, int labelFlag);
 /*Add data to the data table*/
-int addData(TokenLine* tokens, Table* dataTable);
+int addData(TokenLine* tokens, Table* dataTable, int labelFlag);
 /*Add string to the data table*/
 int addString(TokenLine* tokens, Table* dataTable);
 /*Add a label to the symbol table*/
