@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <math.h>
+#include "config.h"
 #include "table.h"
 
 #ifndef INPUTOUTPUT_H
@@ -19,3 +21,4 @@ char* strip(char*);
 void printWarning(char* warning, int lineNumber);
 void printError(char* error, int lineNumber);
 int hasErrors(void);
+char* itob(int num);

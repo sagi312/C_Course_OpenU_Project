@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <math.h>
+#include "config.h"
 #include "table.h"
 #include "inputOutput.h"
 
@@ -70,15 +72,19 @@ TokenLine* tokenizeLine(char* line, int lineNumber) {
     tokens->lineNumber = lineNumber;
     
     tokens->fields[0] = strdup(strtok(tmp, " \t"));
-    while(i < NUMBER_OF_FIELDS-1 && tokens->fields[i] != NULL) {
+    /*Go over all fields not including the last one*/
+    while(i < NUMBER_OF_FIELDS-2 && tokens->fields[i] != NULL) {
         tokens->fields[++i] = strdup(strtok(NULL, " \t"));
     }
-    if(i != NUMBER_OF_FIELDS-1){
-        tokens->fields[i] = strdup(strtok(NULL, ""));
+    /*Add rest of line to last field or make rest of fields empty*/
+    if(i == NUMBER_OF_FIELDS-2 && tokens->fields[i] != NULL)
+        tokens->fields[++i] = strdup(strtok(NULL, ""));
+    else {
         while(i < NUMBER_OF_FIELDS){
             tokens->fields[++i] = NULL;
         }
     }
+
     free(tmp);
     return tokens;
 }
@@ -170,4 +176,47 @@ void printError(char* error, int lineNumber) {
 
 int hasErrors(void) {
     return errorFlag;
+}
+
+char* itob(int num){
+    char *res = malloc((BINARY_WORD_SIZE+1)*sizeof(char));
+    int i = 0;
+
+    if(num < 0) {
+        /*Invert the number*/
+        num = num * -1;
+
+        for(i = 0; i < BINARY_WORD_SIZE; i++){
+            /*11-i because we're starting from the least segnificent digit, and we want to print the inverted number*/
+            if(num & 1 == 1)
+                res[BINARY_WORD_SIZE-1-i] = '0';
+            else
+                res[BINARY_WORD_SIZE-1-i] = '1';
+            num >>= 1;
+        }
+    
+        /*Add 1 to the number*/
+        i = 0;
+        while(i < BINARY_WORD_SIZE && res[BINARY_WORD_SIZE-1-i] == '1'){
+            res[BINARY_WORD_SIZE-1-i] = '0';
+            i++;
+        }
+        if(i < 12)
+            res[BINARY_WORD_SIZE-1-i] = '1';
+        else
+            res[BINARY_WORD_SIZE-1-i] = '0';
+    }
+    else {
+        for(i = 0; i < BINARY_WORD_SIZE; i++){
+            /*11-i because we're starting from the least segnificent digit*/
+            if(num & 1 == 1)
+                res[BINARY_WORD_SIZE-1-i] = '1';
+            else
+                res[BINARY_WORD_SIZE-1-i] = '0';
+            num >>= 1;
+        }
+    }
+
+    res[BINARY_WORD_SIZE] = '\0';
+    return res;
 }
