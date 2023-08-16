@@ -220,3 +220,19 @@ char* itob(int num){
     res[BINARY_WORD_SIZE] = '\0';
     return res;
 }
+
+char* itoa(int num){
+    char* res;
+    int size = 0;
+    if(num < 0)
+        size = NUMBER_OF_DIGITS(num * -1) + 2;
+    else if(num != 0)
+        size = NUMBER_OF_DIGITS(num) + 1;
+    res = malloc(sizeof(char) * size);
+    if(res == NULL) {
+        printError("Memory allocation failed", -1);
+        return EXIT_FAILURE;
+    }
+    sprintf(res, "%d", num);
+    return res;
+}

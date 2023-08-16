@@ -22,3 +22,4 @@ void printWarning(char* warning, int lineNumber);
 void printError(char* error, int lineNumber);
 int hasErrors(void);
 char* itob(int num);
+char* itoa(int num);
