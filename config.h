@@ -7,6 +7,12 @@
 #define BINARY_WORD_SIZE 12
 #define MAX_NUM 2047
 #define MIN_NUM -2048
+#define MAX_NUM_OP 511
+#define MIN_NUM_OP -512
+#define MAX_CHAR 126
+#define MIN_CHAR 32
+
+#define NUMBER_OF_DIGITS(x) (int)(ceil(log10(x))+1)
 
 
 #define RESERVED_NAMES {"mov", "cmp", "add", "sub", "not", "clr", "lea", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop", "mcro", "endmcro", ".data", ".entry", ".extern", ".string", "@r0", "@r1", "@r2", "@r3", "@r4", "@r5", "@r6", "@r7",}
