@@ -12,7 +12,7 @@ typedef enum InstructionType{Comment, Op, Data, String, Extern, Entry} Instructi
 InstructionType getInstructType(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable, int labelFlag);
 int isComment(TokenLine* tokens);
 int hasLabel(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable);
-int isValidLabel(char* label, Table* codeSymbolTable, Table* dataSymbolTable, int lineNum);
+int isValidLabel(char* label, int lineNum, int printErrors);
 int hasOp(TokenLine* tokens, Table* opTable, int labelFlag);
 int isData(TokenLine* tokens, int labelFlag);
 int isString(TokenLine* tokens, int labelFlag) ;

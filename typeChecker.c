@@ -52,9 +52,16 @@ hasLabel(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable){
     
 
     if(firstField[strlen(firstField) - 1] == ':') {
+        
         name = malloc(sizeof(char) * (strlen(firstField)-1));
+        if(name == NULL) {
+            printError("Memory allocation failed", -1);
+            return EXIT_FAILURE;
+        }
         strncpy(name, firstField, strlen(firstField)-1);
-        if(!isValidLabel(name, codeSymbolTable, dataSymbolTable, getLineNumber(tokens))) {
+        name[strlen(firstField)-1] = '\0';
+
+        if(!isValidLabel(name, getLineNumber(tokens), 1)) {
             free(name);
             free(firstField);
             return -1;
@@ -72,24 +79,26 @@ hasLabel(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable){
     return 0;
 }
 
-isValidLabel(char* label, Table* codeSymbolTable, Table* dataSymbolTable, int lineNum) {
+isValidLabel(char* label, int lineNum, int printErrors) {
     int length, i;
-    if(label == NULL || codeSymbolTable == NULL || dataSymbolTable == NULL)
+    if(label == NULL)
         return 0;
 
     if(strlen(label) < 1 || strlen(label) > MAX_LABEL_LENGTH) {
-        printError("Label is too short or too long", lineNum);
+        if(printErrors)
+            printError("Label is too short or too long", lineNum);
         return 0;
     }
     if(!isalpha(label[0])) {
-        printError("Label must start with a letter", lineNum);
+        if(printErrors)
+            printError("Label must start with a letter", lineNum);
         return 0;
     }
     length = strlen(label);
     for(i = 0; i < length; i++) {
         if(!isalnum(label[i])) {
-            printf("%c\n", label[i]);
-            printError("Label must contain only letters and numbers", lineNum);
+            if(printErrors)
+                printError("Label must contain only letters and numbers", lineNum);
             return 0;
         }
     }
@@ -228,7 +237,7 @@ isExtern(TokenLine* tokens, int labelFlag, Table* codeSymbolTable, Table* dataSy
             return 1;
         }
 
-        if(!isValidLabel(label, codeSymbolTable, dataSymbolTable, getLineNumber(tokens))) {
+        if(!isValidLabel(label, getLineNumber(tokens), 1)) {
             /*Errors will be printed by checking function*/
             free(externDeclearation);
             free(label);
