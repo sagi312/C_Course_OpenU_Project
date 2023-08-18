@@ -6,7 +6,7 @@ assembler: assembler.o table.o inputOutput.o preassembler.o firstPass.o typeChec
 assembler.o: assembler.c config.h table.h inputOutput.h converter.h preassembler.h firstPass.h secondPass.h
 	gcc -c assembler.c $(FLAGS) 
 
-preassembler.o: preassembler.c preassembler.h table.h inputOutput.h stringUtils.h
+preassembler.o: preassembler.c preassembler.h table.h inputOutput.h stringUtils.h converter.h config.h
 	gcc -c preassembler.c $(FLAGS)
 
 table.o: table.c table.h stringUtils.h

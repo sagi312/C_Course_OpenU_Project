@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
+#include "converter.h"
+#include "stringUtils.h"
 #include "table.h"
 #include "inputOutput.h"
 

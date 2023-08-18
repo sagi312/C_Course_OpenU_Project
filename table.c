@@ -193,6 +193,26 @@ int inTable(char* name, Table* table) {
     return 0;
 }
 
+/*Check if a cell is in a table as data*/
+int inTableData(char* data, Table* table) {
+    /*To loop on table*/
+    Table* pointer = table;
+
+    if(table == NULL){
+        return 0;
+    }
+    
+    /*Loop until last cell or found entry*/
+    while(pointer != NULL){
+        if(pointer->cellData != NULL && !strcmp(pointer->cellData, data)) {
+            return 1;
+        }
+        pointer = pointer->nextCell;
+    }
+
+    return 0;
+}
+
 /*Get the table size (not including the header)*/
 int getTableSize(Table* table) {
     /*To loop on table*/

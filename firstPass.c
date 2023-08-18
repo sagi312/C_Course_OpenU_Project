@@ -30,7 +30,7 @@ int firstPass(FILE* file, Table* symbolTable, Table* fileTable, int* icOut, int*
     dataTable = createTable(); /*A table for the data encodings*/
 
     line = readLine(file);
-    while(line != NULL && strlen(line) > 0){
+    while(line != NULL){
         tokens = tokenizeLine(line, i);
 
         /*Check if there's a label in the line. If there was an error with the label, still set label flag for rest of line detection*/
@@ -96,7 +96,7 @@ int firstPass(FILE* file, Table* symbolTable, Table* fileTable, int* icOut, int*
         free(line);
 
     if((ic + dc-OFFSET) > MAX_MEMORY_USE)
-        printError("Assembly file will use too much memory", i);
+        printError("Assembly file will use too much memory", -1);
 
     /*Connect the symbol tables into one table*/
     connectSymbolTables(symbolTable, codeSymbolTable, dataSymbolTable, ic);
@@ -156,13 +156,19 @@ int getOpWordCount(TokenLine* tokens, int labelFlag){
     for(i = 0; i < OP_GROUP3_COUNT; i++)
         addCell(group3Arr[i], group3);
 
-    if(inTable(opName, group1)) {
+    if(opParms == NULL && !inTable(opName, group3)) /*No params*/
+        opWordCount = 0;
+    else if(inTable(opName, group1)) {
         parm1 = strtok(opParms, ", \t");
-        parm2 = strtok(NULL, ", \t");
-        if(isRegister(parm1) && isRegister(parm2))
-            opWordCount = 2;
-        else
-            opWordCount = 3;
+        if(parm1 == NULL || strlen(parm1) == 0) /*Only one param*/
+            opWordCount = 0;
+        else {
+            parm2 = strtok(NULL, ", \t");
+            if(isRegister(parm1) && isRegister(parm2))
+                opWordCount = 2;
+            else
+                opWordCount = 3;
+        }
     }
     else if(inTable(opName, group2))
         opWordCount = 2;
@@ -238,7 +244,7 @@ int connectSymbolTables(Table* symbolTable, Table* codeSymbolTable, Table* dataS
         currCellData = getCellData(currCell, dataSymbolTable);
         currCellDataOffset = itoa(atoi(currCellData) + ic);
         addCell(currCell, symbolTable);
-        setCellData(currCell, currCellData, symbolTable);
+        setCellData(currCell, currCellDataOffset, symbolTable);
         free(currCellData);
         free(currCellDataOffset);
         free(currCell);

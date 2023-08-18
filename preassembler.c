@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "config.h"
 #include "table.h"
+#include "converter.h"
+#include "stringUtils.h"
 #include "inputOutput.h"
 #include "preassembler.h"
 
@@ -21,8 +23,8 @@ Table *reservedWordsTable, *macroTable;
 /*Preassemble the file to the file table by expending all macros*/
 int preAssemble(FILE* file, Table* fileTable){
     TokenLine* tokens;
-    char *line, *currMacro, *secondField;
-    int inMcro, i;
+    char *line, *currMacro, *firstField, *secondField;
+    int inMcro, i, res;
     char* invalidWords[] = RESERVED_NAMES;
 
     /*Create a table of the reserved words to check if a macro name is a reserved word*/
@@ -39,23 +41,31 @@ int preAssemble(FILE* file, Table* fileTable){
     inMcro = 0;
     line = readLine(file);
     currMacro = secondField = NULL;
-    while(line != NULL && strlen(line) > 0){
+    while(line != NULL){
         if(strlen(line) > MAX_LINE_LENGTH){
+            /*To not include the \n in the count*/
             if(strlen(line) == MAX_LINE_LENGTH+1 && line[strlen(line)] != '\n')
                 printError("Line is too long", i);
         }
         tokens = tokenizeLine(line, i);
+        firstField = getTokenField(0, tokens);
         secondField = getTokenField(1, tokens);
-        if(isValidMacro(tokens, inMcro)){
+        if(firstField == NULL) {
+            addLine(line, i, fileTable);
+        }
+        else if(isValidMacro(tokens, inMcro)){
             replaceMacro(fileTable, tokens);
         }
-        else if(isMacro(tokens, inMcro)){
-            addMacroEntry(secondField);
-            currMacro = strdup(secondField);
-            inMcro = 1;
+        else if((res = isMacro(tokens, inMcro))){
+            if(res == 1) {
+                addMacroEntry(secondField);
+                free(currMacro); /*Free previous macro*/
+                currMacro = strdup(secondField);
+            }
+            inMcro = 1; /*Will also update if there is an error so we can still correctly check for endmcro*/
         }
         else if(isEndMacro(tokens, inMcro)){
-            inMcro = 0;
+            inMcro = 0; /*Will also update if there is an error so we can still correctly check for mcro*/
         }
         else if(inMcro){
             addMacroLine(line, currMacro);
@@ -65,6 +75,7 @@ int preAssemble(FILE* file, Table* fileTable){
         }
 
         freeTokenLine(tokens);
+        free(firstField);
         if(secondField != NULL)
             free(secondField);
         free(line);
@@ -97,7 +108,7 @@ int isMacro(TokenLine* line, int inMcro) {
         if(inMcro) {
             printError("Nested macros aren't supported", getLineNumber(line));
         }
-        else if(secondField == NULL) {
+        else if(secondField == NULL || strlen(secondField) == 0) {
             printError("Macro name is missing", getLineNumber(line));
         }
         else if(thirdField != NULL){
@@ -115,6 +126,10 @@ int isMacro(TokenLine* line, int inMcro) {
             free(thirdField);
             return 1;
         }
+        free(firstField);
+        free(secondField);
+        free(thirdField);
+        return -1;
     }
     free(firstField);
     free(secondField);
@@ -129,12 +144,12 @@ int isEndMacro(TokenLine* line, int inMcro) {
         if(!inMcro){
             printError("End of macro while not in macro", getLineNumber(line));
             free(firstField);
-            return 0;
+            return -1;
         }
-        if(getTokenField(1, line) != NULL) {
+        if(firstField != NULL) {
             printError("Extra text after macro ending declaration", getLineNumber(line));
             free(firstField);
-            return 0;
+            return -1;
         }
         free(firstField);
         return 1;
@@ -202,7 +217,7 @@ int isValidMacro(TokenLine* line, int inMcro){
             free(firstField);
             return 0;
         }
-        if(getTokenField(1, line) != NULL) {
+        if(firstField != NULL) {
             printError("Extra text after macro use", getLineNumber(line));
             free(firstField);
             return 0;
@@ -217,8 +232,7 @@ int isValidMacro(TokenLine* line, int inMcro){
 /*Add a line to the file table*/
 int addLine(char* line, int lineNum, Table* fileTable){
     char* lineName;
-    lineName = malloc(sizeof(char) * (strlen("line ") + NUMBER_OF_DIGITS(lineNum) + 1));
-    sprintf(lineName, "line %d", lineNum);
+    lineName = itoa(lineNum);
     addCell(lineName, fileTable);
     setCellData(lineName, line, fileTable);
     free(lineName);

@@ -78,6 +78,8 @@ int addString(TokenLine* tokens, Table* dataTable, int labelFlag) {
         c = parmString[i];
         if(c > MAX_CHAR || c < MIN_CHAR) {
             printError("Char out of range in string declaration", getLineNumber(tokens));
+            free(cellName);
+            free(parmString);
             return EXIT_FAILURE;
         }
         cellData = itob((int)c);
@@ -124,6 +126,7 @@ int addOp(TokenLine* tokens, Table* codeTable, int labelFlag) {
     }
 
     if(opName == NULL) {
+        /*Not supposed to get here, because line will not be classified as op*/
         printError("Missing operation name", getLineNumber(tokens));
         if(parmString != NULL)
             free(parmString);
@@ -150,6 +153,7 @@ int addOp(TokenLine* tokens, Table* codeTable, int labelFlag) {
     }
 
     if(!inTable(opName, opCodes)) {
+        /*Not supposed to get here, because line will not be classified as op*/
         printError("Invalid operation name", getLineNumber(tokens));
         if(parmString != NULL)
             free(parmString);
@@ -441,14 +445,12 @@ int addExternLabels(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbol
     while(labelName != NULL) {
         if(!isValidLabel(labelName, getLineNumber(tokens), 1)) {
             free(parmString);
-            free(labelName);
             return EXIT_FAILURE;
         }
 
         if(inTable(labelName, codeSymbolTable) || inTable(labelName, dataSymbolTable)) {
             printError("Label already exists", getLineNumber(tokens));
             free(parmString);
-            free(labelName);
             return EXIT_FAILURE;
         }
         addCell(labelName, codeSymbolTable);

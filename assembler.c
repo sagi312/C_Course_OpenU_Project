@@ -69,6 +69,12 @@ int assemble(char* name){
 
     /*Preassemble*/
     if(preAssemble(asFile, amTable) == EXIT_FAILURE){
+        fclose(asFile);
+        freeTable(symbolTable);
+        freeTable(fileTable);
+        freeTable(externTable);
+        freeTable(entryTable);
+        freeTable(amTable);
         return EXIT_FAILURE;
     }
     fclose(asFile);
@@ -77,11 +83,18 @@ int assemble(char* name){
 
         /*Save preassembled file*/
         amName = addFileSuffix(name, ".am");
-        if(amName == NULL)
+        if(amName == NULL) {
+            freeTable(symbolTable);
+            freeTable(fileTable);
+            freeTable(externTable);
+            freeTable(entryTable);
+            freeTable(amTable);
             return EXIT_FAILURE;
+        }
         amFile = fopen(amName, "w+");
         writeFileFromTableData(amFile, amTable);
         free(amName);
+        freeTable(amTable);
 
         /*First pass*/
         rewind(amFile);
@@ -96,31 +109,44 @@ int assemble(char* name){
         fclose(amFile);
     }
 
+    freeTable(symbolTable);
+
     if(hasErrors() == 0){
         /*Save ext file if there are extern labels*/
         if(getTableSize(externTable) > 0){
             extName = addFileSuffix(name, ".ext");
-            if(extName == NULL)
+            if(extName == NULL) {
+                freeTable(entryTable);
+                freeTable(externTable);
+                freeTable(fileTable);
                 return EXIT_FAILURE;
+            }
             extFile = fopen(extName, "w");
             writeFileFromTableData(extFile, externTable);
             fclose(extFile);
             free(extName);
         }
+        freeTable(externTable);
         /*Save ent file if there are entry labels*/
         if(getTableSize(entryTable) > 0){
             entName = addFileSuffix(name, ".ent");
-            if(entName == NULL)
+            if(entName == NULL) {
+                freeTable(entryTable);
+                freeTable(fileTable);
                 return EXIT_FAILURE;
+            }
             entFile = fopen(entName, "w");
             writeFileFromTableData(entFile, entryTable);
             fclose(entFile);
             free(entName);
         }
+        freeTable(entryTable);
         /*Save ob file*/
         obName = addFileSuffix(name, ".ob");
-        if(obName == NULL)
+        if(obName == NULL) {
+            freeTable(fileTable);
             return EXIT_FAILURE;
+        }
         obFile = fopen(obName, "w");
         
         /*Encode table*/
@@ -131,13 +157,14 @@ int assemble(char* name){
         fclose(obFile);
         free(obName);
         freeTable(encodedTable);
+        freeTable(fileTable);
     }
-
-    freeTable(amTable);
-    freeTable(symbolTable);
-    freeTable(fileTable);
-    freeTable(externTable);
-    freeTable(entryTable);
+    else{
+        freeTable(fileTable);
+        freeTable(entryTable);
+        freeTable(externTable);
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }

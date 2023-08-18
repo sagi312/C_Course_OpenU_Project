@@ -55,7 +55,12 @@ char* readLine(FILE* file){
         buffer = tmp;
     }
     buffer[i] = '\0';
-    
+
+    /*Finished reading file*/
+    if(c == EOF && i == 0){
+        free(buffer);
+        return NULL;
+    }
     return buffer;
 }
 
