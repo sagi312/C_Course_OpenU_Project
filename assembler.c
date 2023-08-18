@@ -3,6 +3,7 @@
 #include "inputOutput.h"
 #include "preassembler.h"
 #include "firstPass.h"
+#include "secondPass.h"
 #include "typeChecker.h"
 
 
@@ -11,12 +12,74 @@ int testInput(void);
 int testFisrtPass(void);
 
 int main(int argc, char* argv[]){
-    FILE* file = fopen("test2.txt", "r");
-    Table *symbolTable = createTable(), *fileTable = createTable();
-    firstPass(file, symbolTable, fileTable);
+    FILE* file = fopen("test3.txt", "r+");
+
+    assemble(file);
+
     return 0;
     /*return preAssemble(NULL);*/
 }  
+
+int assemble(FILE* file){
+    Table *symbolTable, *fileTable, *externTable, *entryTable;
+    FILE *asFile, *externFile, *entryFile, *obFile;
+
+    symbolTable = createTable();
+    fileTable = createTable();
+    externTable = createTable();
+    entryTable = createTable();
+
+    printf("Preassemble:\n");
+    asFile = preAssemble(file);
+    printf("Complete\n");
+    if(asFile == NULL){
+        return EXIT_FAILURE;
+    }
+    rewind(asFile);
+    printf("File is %d\n", asFile);
+    printf("First pass:\n");
+    firstPass(asFile, symbolTable, fileTable);
+    printf("Complete\n");
+    if(hasErrors() == 0) {
+        printf("Second pass:\n");
+        rewind(asFile);
+        secondPass(asFile, symbolTable, fileTable, externTable, entryTable);
+        printf("Complete\n");
+    }
+
+    printf("Errors: %d\n", hasErrors());
+    printf("FILE TABLE:\n");
+    printTable(fileTable);
+    printf("externTable:\n");
+    printTable(externTable);
+    printf("entryTable:\n");
+    printTable(entryTable);
+    if(hasErrors() == 0){
+        if(getTableSize(externTable) > 0){
+            externFile = fopen("extern.txt", "w");
+            writeFileFromTableData(externFile, externTable, 1);
+            fclose(externFile);
+        }
+        if(getTableSize(entryTable) > 0){
+            entryFile = fopen("entry.txt", "w");
+            writeFileFromTableData(entryFile, entryTable, 1);
+            fclose(entryFile);
+        }
+        if(getTableSize(fileTable) > 0){
+            obFile = fopen("ob.txt", "w");
+            writeFileFromTableData(obFile, fileTable, 1);
+            fclose(obFile);
+        }
+    }
+
+    fclose(asFile);
+    freeTable(symbolTable);
+    freeTable(fileTable);
+    freeTable(externTable);
+    freeTable(entryTable);
+
+    return EXIT_SUCCESS;
+}
 
 int testFirstPass(void) {
     FILE* file = fopen("test2.txt", "r");
