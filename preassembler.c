@@ -8,7 +8,7 @@
 #define NUMBER_OF_DIGITS(x) (int)(ceil(log10(x))+1)
 
 Table *reservedWordsTable, *macroTable;
-int preAssemble(FILE* file){
+FILE* preAssemble(FILE* file){
     Table* fileTable = createTable();
     TokenLine* tokens;
     FILE* output;
@@ -34,25 +34,20 @@ int preAssemble(FILE* file){
         tokens = tokenizeLine(line, i);
         secondField = getTokenField(1, tokens);
         if(isValidMacro(tokens, inMcro)){
-            printf("macro name in Line: %s\n", line);
             replaceMacro(fileTable, tokens);
         }
         else if(isMacro(tokens, inMcro)){
-            printf("macro start in Line: %s\n", line);
             addMacroEntry(secondField);
             currMacro = strdup(secondField);
             inMcro = 1;
         }
         else if(isEndMacro(tokens, inMcro)){
-            printf("macro end in Line: %s\n", line);
             inMcro = 0;
         }
         else if(inMcro){
-            printf("macro data in Line: %s\n", line);
             addMacroLine(line, currMacro);
         }
         else{
-            printf("regular line in Line: %s\n", line);
             addLine(line, i, fileTable);
         }
         freeTokenLine(tokens);
@@ -60,11 +55,9 @@ int preAssemble(FILE* file){
         i++;
     }
 
-    printTable(fileTable);
     if(!hasErrors()) {
-        output = fopen("output.txt", "w");
+        output = fopen("output.txt", "w+");
         writeFileFromTableData(output, fileTable, 1);
-        fclose(output);
     }
 
     if(secondField != NULL)
@@ -80,9 +73,9 @@ int preAssemble(FILE* file){
     
 
     if(hasErrors())
-        return EXIT_FAILURE;
+        return NULL;
 
-    return EXIT_SUCCESS;
+    return output;
 }
 
 int isMacro(TokenLine* line, int inMcro) {
