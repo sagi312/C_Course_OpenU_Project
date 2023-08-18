@@ -1,9 +1,9 @@
-#include <stdlib.h>
 #include <stdio.h>
-#include "inputOutput.h"
+#include "stringUtils.h"
 #include "table.h"
+#include "inputOutput.h"
 #include "converter.h"
-#include "config.h"
+#include "typeChecker.h"
 
 /*Add data to the data table*/
 int addData(TokenLine* tokens, Table* dataTable, int labelFlag);
@@ -19,6 +19,3 @@ int addLabel(TokenLine* tokens, Table* symbolTable, int address);
 
 /*Add extern labels to the symbol table*/
 int addExternLabels(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable, int labelFlag); 
-
-/*Get the parameter string for the instruction lines*/
-char* getParmString(int lastField, TokenLine* tokens);

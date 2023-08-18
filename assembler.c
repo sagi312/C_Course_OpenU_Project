@@ -1,11 +1,11 @@
 #include <stdio.h>
+#include "config.h"
 #include "table.h"
 #include "inputOutput.h"
+#include "converter.h"
 #include "preassembler.h"
 #include "firstPass.h"
 #include "secondPass.h"
-#include "typeChecker.h"
-#include "converter.h"
 
 /*Add a suffix to a given file name*/
 char* addFileSuffix(char* name, char* suffix);
@@ -14,11 +14,10 @@ char* addFileSuffix(char* name, char* suffix);
 Table* encodeTableBase64(Table* table);
 
 /*Assemble a file to .ob, .ent and .ext files*/
-int assembler(char* name);
+int assemble(char* name);
 
 /*This function will assemble which file given to it as an argument*/
 int main(int argc, char* argv[]){
-    FILE* file;
     char *name;
     int i;
 
@@ -48,8 +47,8 @@ int main(int argc, char* argv[]){
 int assemble(char* name){
     Table *symbolTable, *amTable, *fileTable, *externTable, *entryTable, *encodedTable;
     FILE *amFile, *asFile, *obFile, *entFile, *extFile;
-    int tableSize, i, ic, dc;
-    char *binary, *base64, *amName, *asName, *obName, *entName, *extName;
+    int ic, dc;
+    char *amName, *asName, *obName, *entName, *extName;
 
     /*Open file*/
     asName = addFileSuffix(name, ".as");

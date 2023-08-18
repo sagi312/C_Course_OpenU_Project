@@ -1,10 +1,20 @@
 #include <stdio.h>
-#include <string.h>
-#include <math.h>
+#include <stdlib.h>
+#include "config.h"
 #include "table.h"
 #include "inputOutput.h"
 #include "preassembler.h"
-#include "config.h"
+
+/*Local functions*/
+int isValidMacro(TokenLine* line, int inMcro);
+int replaceMacro(Table* fileTable, TokenLine* line);
+int isMacro(TokenLine* line, int inMcro);
+int isEndMacro(TokenLine* line, int inMcro);
+int addMacroEntry(char* name);
+int addMacroLine(char* line, char* macroName);
+int addLine(char* line, int lineNum, Table* fileTable);
+
+
 
 Table *reservedWordsTable, *macroTable;
 

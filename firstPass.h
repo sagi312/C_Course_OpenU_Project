@@ -1,13 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <math.h>
+#include "config.h"
 #include "table.h"
 #include "inputOutput.h"
-#include "typeChecker.h"
-#include "config.h"
 #include "encoder.h"
 #include "converter.h"
+#include "typeChecker.h"
 
 /*This function will encode the file's content into the given fileTable. It will
   not encode the labels, and instead will save them in the symbolTable for secondPass.

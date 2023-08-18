@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <ctype.h>
-#include "inputOutput.h"
-#include "table.h"
 #include "config.h"
+#include "table.h"
+#include "inputOutput.h"
 #include "typeChecker.h"
 
 InstructionType getInstructType(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable, int labelFlag) {
@@ -29,7 +29,7 @@ InstructionType getInstructType(TokenLine* tokens, Table* codeSymbolTable, Table
 }
 
 /*Check if a line is a comment*/
-isComment(TokenLine* tokens) {
+int isComment(TokenLine* tokens) {
     char* firstField = getTokenField(0, tokens);
     if(firstField == NULL)
         return 0;
@@ -42,9 +42,8 @@ isComment(TokenLine* tokens) {
 }
 
 /*Check if a line has a label*/
-hasLabel(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable){
+int hasLabel(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable){
     char *name, *firstField = getTokenField(0, tokens);
-    int i, length;
 
     if(firstField == NULL)
         return 0;
@@ -78,7 +77,7 @@ hasLabel(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable){
     return 0;
 }
 
-isValidLabel(char* label, int lineNum, int printErrors) {
+int isValidLabel(char* label, int lineNum, int printErrors) {
     int length, i;
     if(label == NULL)
         return 0;
@@ -106,7 +105,7 @@ isValidLabel(char* label, int lineNum, int printErrors) {
 }
 
 /*Check if a line has an operation*/
-hasOp(TokenLine* tokens, Table* opTable, int labelFlag){
+int hasOp(TokenLine* tokens, Table* opTable, int labelFlag){
     char* opName;
     if(labelFlag)
         opName = getTokenField(1, tokens);
@@ -123,9 +122,8 @@ hasOp(TokenLine* tokens, Table* opTable, int labelFlag){
 }
 
 /*Check if a line is a .data declaration of data*/
-isData(TokenLine* tokens, int labelFlag){
+int isData(TokenLine* tokens, int labelFlag){
     char *dataDeclearation, *numberString, *num;
-    int i;
     if(labelFlag) {
         dataDeclearation = getTokenField(1, tokens);
         numberString = getParmString(1, tokens);
@@ -176,9 +174,8 @@ isData(TokenLine* tokens, int labelFlag){
 }
 
 /*Check if a line is a .string declaration of data*/
-isString(TokenLine* tokens, int labelFlag) {
+int isString(TokenLine* tokens, int labelFlag) {
     char *stringDeclearation, *string;
-    int i;
     if(labelFlag) {
         stringDeclearation = getTokenField(1, tokens);
         string = getParmString(1, tokens);
@@ -212,7 +209,7 @@ isString(TokenLine* tokens, int labelFlag) {
     return 0;
 }
 /*Check if the line has an extern declaration*/
-isExtern(TokenLine* tokens, int labelFlag) {
+int isExtern(TokenLine* tokens, int labelFlag) {
     char *externDeclearation, *label, *parmString;
     if(labelFlag) {
         externDeclearation = getTokenField(1, tokens);
@@ -254,7 +251,7 @@ isExtern(TokenLine* tokens, int labelFlag) {
     return 0;
 }
 
-isEntry(TokenLine* tokens, int labelFlag) {
+int isEntry(TokenLine* tokens, int labelFlag) {
     char *entryDeclaration, *label, *parmString;
     if(labelFlag) {
         entryDeclaration = getTokenField(1, tokens);
@@ -296,7 +293,7 @@ isEntry(TokenLine* tokens, int labelFlag) {
     return 0;
 }
 
-isRegister(char* line){
+int isRegister(char* line){
     if(line == NULL || strlen(line) != 3)
         return 0;
     if(line[0] != '@' || line[1] != 'r' || line[2] < '0' || line[2] > '7' || line[3] != '\0')
@@ -304,9 +301,8 @@ isRegister(char* line){
     return 1;
 }
 
-isNum(char* num) {
+int isNum(char* num) {
     int i = 0;
-    char* temp = strdup(num);
     if(num == NULL)
         return 0;
     if(num[0] == '-' || num[0] == '+')
@@ -318,7 +314,7 @@ isNum(char* num) {
     return 1;
 }
 
-isStringParm(char* string){
+int isStringParm(char* string){
     int i;
     if(string == NULL)
         return 0;
@@ -330,4 +326,24 @@ isStringParm(char* string){
             return 0;
     }
     return 1;
+}
+
+
+/*Get the parameter string for the instruction lines*/
+char* getParmString(int lastField, TokenLine* tokens) {
+    char* parmString = getTokenField(++lastField, tokens), *nextField;
+
+    if(parmString == NULL)
+        return NULL;
+        
+    while((nextField = getTokenField(++lastField, tokens)) != NULL) {
+        parmString = realloc(parmString, sizeof(char) * (strlen(parmString) + strlen(nextField)));
+        if(parmString == NULL){
+            printError("Memory allocation failed", getLineNumber(tokens));
+            return NULL;
+        }
+        strcat(parmString, nextField);
+        free(nextField);
+    }
+    return parmString;
 }

@@ -1,10 +1,17 @@
-#include <stdlib.h>
 #include <stdio.h>
-#include "encoder.h"
-#include "inputOutput.h"
+#include "stringUtils.h"
 #include "table.h"
+#include "inputOutput.h"
 #include "converter.h"
-#include "config.h"
+#include "typeChecker.h"
+#include "encoder.h"
+
+/*Local functions*/
+int getAddresingType(char* parm, int lineNumber);
+int addOpEncoding(int opCode, int srcAddressType, int destAddressType, Table* codeTable);
+int addParmEncoding(char* parm, int parmAddressType, Table* codeTable);
+int addRegistersEncoding(char* src, char* dest, Table* codeTable);
+
 
 /*Add data to the data table*/
 int addData(TokenLine* tokens, Table* dataTable, int labelFlag) {
@@ -97,7 +104,7 @@ int addOp(TokenLine* tokens, Table* codeTable, int labelFlag) {
     char *group1Arr[] = OP_GROUP1, *group2Arr[] = OP_GROUP2, *group3Arr[] = OP_GROUP3, *opCodesArr[] = OP_NAMES;
 
     /*function variables*/
-    char *opName, *parmString, *src, *dest, *cellName, *cellData;
+    char *opName, *parmString, *src, *dest;
     int opCode, destAddressType, srcAddressType, i;
 
     /*Get the correct parm string*/
@@ -384,23 +391,4 @@ int addExternLabels(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbol
     
     free(parmString);
     return EXIT_SUCCESS;
-}
-
-/*Get the parameter string for the instruction lines*/
-char* getParmString(int lastField, TokenLine* tokens) {
-    char* parmString = getTokenField(++lastField, tokens), *nextField;
-
-    if(parmString == NULL)
-        return NULL;
-        
-    while((nextField = getTokenField(++lastField, tokens)) != NULL) {
-        parmString = realloc(parmString, sizeof(char) * (strlen(parmString) + strlen(nextField)));
-        if(parmString == NULL){
-            printError("Memory allocation failed", getLineNumber(tokens));
-            return NULL;
-        }
-        strcat(parmString, nextField);
-        free(nextField);
-    }
-    return parmString;
 }

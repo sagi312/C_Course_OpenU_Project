@@ -1,20 +1,24 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <math.h>
-#include "firstPass.h"
+#include "config.h"
 #include "table.h"
 #include "inputOutput.h"
-#include "config.h"
-#include "typeChecker.h"
 #include "encoder.h"
 #include "converter.h"
+#include "typeChecker.h"
+
+/*Local Functions*/
+int getWordCount(TokenLine* tokens, InstructionType type, int labelFlag);
+int connectSymbolTables(Table* symbolTable, Table* codeSymbolTable, Table* dataSymbolTable, int ic);
+int connectCodeTables(Table* fileTable, Table* codeTable, Table* dataTable, int ic);
+int getOpWordCount(TokenLine* tokens, int labelFlag);
+int getDataWordCount(TokenLine* tokens, int labelFlag);
+int getStringWordCount(TokenLine* tokens, int labelFlag);
 
 /*This function will encode the file's content into the given fileTable. It will
   not encode the labels, and instead will save them in the symbolTable for secondPass.
   The function will also save the ic and dc counters to *icOut and *dcOut respectivly*/
-firstPass(FILE* file, Table* symbolTable, Table* fileTable, int* icOut, int* dcOut) {
-    int ic = OFFSET, dc = 0, i = 1, errorFlag = 0, labelFlag = 0;
+int firstPass(FILE* file, Table* symbolTable, Table* fileTable, int* icOut, int* dcOut) {
+    int ic = OFFSET, dc = 0, i = 1, labelFlag = 0;
     char *line;
     InstructionType type;
     TokenLine *tokens;
@@ -71,6 +75,14 @@ firstPass(FILE* file, Table* symbolTable, Table* fileTable, int* icOut, int* dcO
                 ic += getWordCount(tokens, Op, labelFlag);
                 addOp(tokens, codeTable, labelFlag);
                 break;
+            
+            case Entry:
+                /*We will deal with entries in the second pass*/
+                break;
+                
+            default:
+                printError("Unknown instruction type", i);
+                break;
         }
 
         free(line);
@@ -116,7 +128,7 @@ int getWordCount(TokenLine* tokens, InstructionType type, int labelFlag) {
 int getOpWordCount(TokenLine* tokens, int labelFlag){
     Table *group1, *group2, *group3;
     char *opName, *opParms, *parm1, *parm2, *group1Arr[] = OP_GROUP1, *group2Arr[] = OP_GROUP2, *group3Arr[] = OP_GROUP3;
-    int i, opCode, opWordCount;
+    int i, opWordCount;
     if(labelFlag) {
         opName = getTokenField(1, tokens);
         opParms = getParmString(1, tokens);
@@ -162,9 +174,8 @@ int getOpWordCount(TokenLine* tokens, int labelFlag){
     return opWordCount;
 }
 
-
 /*Get the number of words the data will take up in final file*/
-int getDataWordCount(tokens, labelFlag) {
+int getDataWordCount(TokenLine* tokens, int labelFlag) {
     char* parmString;
     int wordCount = 0;
     if(labelFlag)
@@ -186,7 +197,7 @@ int getDataWordCount(tokens, labelFlag) {
 }
 
 /*Get the number of words the string will take up in final file*/
-int getStringWordCount(tokens, labelFlag) {
+int getStringWordCount(TokenLine* tokens, int labelFlag) {
     char* parmString;
     int wordCount = 0;
     if(labelFlag)

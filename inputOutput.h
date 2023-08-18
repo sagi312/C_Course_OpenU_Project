@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <math.h>
-#include "config.h"
+#include <stdlib.h>
+#include "stringUtils.h"
 #include "table.h"
 
 #ifndef INPUTOUTPUT_H
@@ -24,11 +24,6 @@ int getLineNumber(TokenLine* line);
 
 /*Write all the cells' data in the table to a file*/
 int writeFileFromTableData(FILE* file, Table* table);
-
-/*Strip a string from spaces*/
-char* strip(char*);
-/*Duplicate a string. My version because the original isn't in the ansi standard*/
-char* strdup(char* str);
 
 /*Print a warning*/
 void printWarning(char* warning, int lineNumber);

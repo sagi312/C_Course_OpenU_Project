@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <math.h>
-#include "config.h"
+#include <stdlib.h>
+#include "stringUtils.h"
 #include "table.h"
 #include "inputOutput.h"
 
@@ -149,33 +149,6 @@ int writeFileFromTableData(FILE* file, Table* table){
     }
     fflush(file);
     return 1;
-}
-
-/*Strip a string from spaces*/
-char* strip(char* line){
-    int i = 0;
-    char* res;
-
-    while(line[i] == ' ' || line[i] == '\t'){
-        i++;
-    }
-    res = strdup(line + i);
-    return res;
-}
-
-/*Duplicate a string. My version because the original isn't in the ansi standard*/
-char* strdup(char* str){
-    char* des;
-    if(str == NULL){
-        return NULL;
-    }
-    des = (char*) malloc(strlen(str)+1);
-    if(des == NULL){
-        fprintf(stderr, "Error: Memory allocation failed.\n");
-        return NULL;
-    }
-    strcpy(des, str);
-    return des;
 }
 
 /*Print a warning*/

@@ -1,34 +1,37 @@
 FLAGS = -Wall -ansi -pedantic -g
 
-assembler: assembler.o table.o inputOutput.o preassembler.o firstPass.o typeChecker.o secondPass.o encoder.o converter.o
-	gcc -o assembler $(FLAGS) $^ -lm 2> mainOutput.txt
+assembler: assembler.o table.o inputOutput.o preassembler.o firstPass.o typeChecker.o secondPass.o encoder.o converter.o stringUtils.o
+	gcc -o assembler $(FLAGS) $^ -lm 
 
-assembler.o: assembler.c table.h inputOutput.h preassembler.h firstPass.h typeChecker.h secondPass.h converter.h config.h
-	gcc -c assembler.c $(FLAGS) 2> assemblerOutput.txt
+assembler.o: assembler.c config.h table.h inputOutput.h converter.h preassembler.h firstPass.h secondPass.h
+	gcc -c assembler.c $(FLAGS) 
 
-preassembler.o: preassembler.c preassembler.h table.h inputOutput.h config.h 
-	gcc -c preassembler.c $(FLAGS) 2> preassemblerOutput.txt
+preassembler.o: preassembler.c preassembler.h table.h inputOutput.h stringUtils.h
+	gcc -c preassembler.c $(FLAGS)
 
-table.o: table.c table.h
-	gcc -c table.c $(FLAGS) 2> tableOutput.txt
+table.o: table.c table.h stringUtils.h
+	gcc -c table.c $(FLAGS) 
 
-inputOutput.o: inputOutput.c inputOutput.h table.h
-	gcc -c inputOutput.c $(FLAGS) 2> inputOutputOutput.txt
+inputOutput.o: inputOutput.c inputOutput.h table.h stringUtils.h
+	gcc -c inputOutput.c $(FLAGS)
 
 typeChecker.o: typeChecker.c table.h inputOutput.h typeChecker.h config.h
-	gcc -c typeChecker.c $(FLAGS) 2> typeCheckerOutput.txt
+	gcc -c typeChecker.c $(FLAGS) 
 
 firstPass.o: firstPass.c firstPass.h table.h inputOutput.h typeChecker.h encoder.h converter.h config.h
-	gcc -c firstPass.c $(FLAGS) 2> firstPassOutput.txt
+	gcc -c firstPass.c $(FLAGS) 
 
 secondPass.o: secondPass.c secondPass.h table.h inputOutput.h typeChecker.h config.h
-	gcc -c secondPass.c $(FLAGS) 2> secondPassOutput.txt
+	gcc -c secondPass.c $(FLAGS) 
 
 encoder.o: encoder.c encoder.h table.h inputOutput.h typeChecker.h converter.h config.h
-	gcc -c encoder.c $(FLAGS) 2> encoderOutput.txt
+	gcc -c encoder.c $(FLAGS)
 
 converter.o: converter.c converter.h inputOutput.h config.h
-	gcc -c converter.c $(FLAGS) 2> converterOutput.txt
+	gcc -c converter.c $(FLAGS)
+
+stringUtils.o: stringUtils.c stringUtils.h
+	gcc -c stringUtils.c $(FLAGS) 
 
 clean:
-	rm *.o assembler
+	rm *.o *.ob *.ent *.am *.ext assembler

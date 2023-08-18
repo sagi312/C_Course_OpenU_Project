@@ -1,9 +1,10 @@
-#include <math.h>
-#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include "config.h"
 #include "inputOutput.h"
 #include "converter.h"
-#include "config.h"
+
 
 /*Convert a 12 bits binary word to base64*/
 char* base64Encode(char* binary){
@@ -50,7 +51,6 @@ char* base64Encode(char* binary){
 
 /*convert an int to base 64 char*/
 char itob64(int dec){
-    char res;
     if(dec >= 0 && dec <= 25)
         return (char)(dec + 'A');
     else if(dec >= 26 && dec <= 51)
@@ -126,7 +126,7 @@ char* itob(int num){
 
         for(i = 0; i < BINARY_WORD_SIZE; i++){
             /*11-i because we're starting from the least segnificent digit, and we want to print the inverted number*/
-            if(num & 1 == 1)
+            if((num & 1) == 1)
                 res[BINARY_WORD_SIZE-1-i] = '0';
             else
                 res[BINARY_WORD_SIZE-1-i] = '1';
@@ -147,7 +147,7 @@ char* itob(int num){
     else {
         for(i = 0; i < BINARY_WORD_SIZE; i++){
             /*11-i because we're starting from the least segnificent digit*/
-            if(num & 1 == 1)
+            if((num & 1) == 1)
                 res[BINARY_WORD_SIZE-1-i] = '1';
             else
                 res[BINARY_WORD_SIZE-1-i] = '0';
@@ -170,7 +170,7 @@ char* itoa(int num){
     res = malloc(sizeof(char) * size);
     if(res == NULL) {
         printError("Memory allocation failed", -1);
-        return EXIT_FAILURE;
+        return NULL;
     }
     sprintf(res, "%d", num);
     return res;

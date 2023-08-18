@@ -1,16 +1,19 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <math.h>
-#include <string.h>
-#include "firstPass.h"
 #include "table.h"
 #include "inputOutput.h"
-#include "config.h"
+#include "converter.h"
 #include "typeChecker.h"
+#include "secondPass.h"
+
+/*Local functions*/
+int replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable);
+int addExternLabel(Table* symbolTable, Table* externTable, char* labelName, int address);
+int setEntryTable(FILE* file, Table* symbolTable, Table* entryTable);
+int addEntry(TokenLine* tokens, Table* symbolTable, Table* entryTable);
+
 
 /*Perform the second pass on the file. Replace all label placeholders with label addresses and create entry and extern tables*/
-secondPass(FILE* file, Table* symbolTable, Table* fileTable, Table* externTable, Table* entryTable){
+int secondPass(FILE* file, Table* symbolTable, Table* fileTable, Table* externTable, Table* entryTable){
 
     replaceLabels(symbolTable, fileTable, externTable);
     setEntryTable(file, symbolTable, entryTable);
@@ -19,9 +22,9 @@ secondPass(FILE* file, Table* symbolTable, Table* fileTable, Table* externTable,
 }
 
 /*Replace all of the label placeholders with the correct addresses, and save the extern labels to their table*/
-replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
-    int size, labelAddress, addressType, encodingInt, i, lastCell;
-    char *labelName, *labelEncoding, *line, *cellName, *cellData;
+int replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
+    int size, addressType, encodingInt, i;
+    char *labelName, *labelEncoding, *labelAddress, *line;
 
     size = getTableSize(fileTable);
     encodingInt = 0;
@@ -60,7 +63,7 @@ replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
 }
 
 /*Add an extern label to the extern table*/
-addExternLabel(Table* symbolTable, Table* externTable, char* labelName, int address){
+int addExternLabel(Table* symbolTable, Table* externTable, char* labelName, int address){
     int lastCell;
     char *cellName, *cellData;
     
@@ -78,7 +81,7 @@ addExternLabel(Table* symbolTable, Table* externTable, char* labelName, int addr
 }
 
 /*Go over the file and set up the entry labels in the entry table*/
-setEntryTable(FILE* file, Table* symbolTable, Table* entryTable){
+int setEntryTable(FILE* file, Table* symbolTable, Table* entryTable){
     int labelFlag = 0, i = 1;
     char *line;
     InstructionType type;
@@ -110,9 +113,9 @@ setEntryTable(FILE* file, Table* symbolTable, Table* entryTable){
 }
 
 /*Add an entry label to the entry table*/
-addEntry(TokenLine* tokens, Table* symbolTable, Table* entryTable){
+int addEntry(TokenLine* tokens, Table* symbolTable, Table* entryTable){
     int lastCell, labelFlag = 0;
-    char *cellName, *cellData, *labelName, *parmString;
+    char *cellName, *cellData, *labelName, *labelAddress, *parmString;
 
     if(hasLabel(tokens, symbolTable, NULL) != 0)
             labelFlag = 1;
@@ -133,7 +136,8 @@ addEntry(TokenLine* tokens, Table* symbolTable, Table* entryTable){
             printError("Label is not defined", getLineNumber(tokens));
             return EXIT_FAILURE;
         }
-        else if(getCellData(labelName, symbolTable) == "extern"){
+        labelAddress = getCellData(labelName, symbolTable);
+        if(!strcmp(labelAddress, "extern")){
             printError("Label is already defined as extern", getLineNumber(tokens));
             return EXIT_FAILURE;
         }
@@ -145,7 +149,7 @@ addEntry(TokenLine* tokens, Table* symbolTable, Table* entryTable){
             cellName = itoa(lastCell);
             /*space for label name + \t + address + \n*/
             cellData = malloc(strlen(labelName) + 2 + NUMBER_OF_DIGITS(lastCell));
-            sprintf(cellData, "%s\t%s\n", labelName, getCellData(labelName, symbolTable));
+            sprintf(cellData, "%s\t%s\n", labelName, labelAddress);
             addCell(cellName, entryTable);
             setCellData(cellName, cellData, entryTable);
             free(cellData);

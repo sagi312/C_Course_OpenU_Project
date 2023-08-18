@@ -1,7 +1,8 @@
-#include <math.h>
-#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "config.h"
+#include "inputOutput.h"
 
 /*Convert a 12 bits binary word to base64*/
 char* base64Encode(char* binary);

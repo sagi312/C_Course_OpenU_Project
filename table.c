@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "stringUtils.h"
 #include "table.h"
 
 struct Table{
