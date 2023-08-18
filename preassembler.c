@@ -1,105 +1,124 @@
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "table.h"
 #include "inputOutput.h"
 #include "preassembler.h"
+#include "config.h"
+#define NUMBER_OF_DIGITS(x) (int)(ceil(log10(x))+1)
 
-Table *invalidTable, *macroTable;
-int preAssemble(FILE* file){
+Table *reservedWordsTable, *macroTable;
+FILE* preAssemble(FILE* file){
     Table* fileTable = createTable();
     TokenLine* tokens;
-    FILE* output = fopen("output.txt", "w");
-    char *line, *currMacro;
-    int inMcro = 0;
+    FILE* output;
+    char *line, *currMacro, *secondField;
+    int inMcro, i;
+    char* invalidWords[] = RESERVED_NAMES;
 
-    char* invalidWords[] = {"mov", "cmp", "add", "sub", "not", "clr", "lea", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop", "mcro", "endmcro", ".data", ".entry", ".extern", ".string"};
-    int i;
-    invalidTable = createTable();
-    macroTable = createTable();
-    for(i = 0; i < 22; i++) {
-        addCell(invalidWords[i], invalidTable);
-        setCellData(invalidWords[i], "", invalidTable);
+    /*Create a table of the reserved words to check if a macro name is a reserved word*/
+    reservedWordsTable = createTable();
+    for(i = 0; i < RESERVED_NAMES_COUNT; i++) {
+        addCell(invalidWords[i], reservedWordsTable);
+        setCellData(invalidWords[i], "", reservedWordsTable);
     }
 
+    macroTable = createTable();
+
+    /*Inititalize variables for main loop of the preassembler*/
     i = 1;
+    inMcro = 0;
     line = readLine(file);
+    currMacro = secondField = NULL;
     while(line != NULL && strlen(line) > 0){
         tokens = tokenizeLine(line, i);
-        i++;
+        secondField = getTokenField(1, tokens);
         if(isValidMacro(tokens, inMcro)){
-            printf("macro name in Line: %s\n", line);
             replaceMacro(fileTable, tokens);
         }
         else if(isMacro(tokens, inMcro)){
-            printf("macro start in Line: %s\n", line);
-            addMacroEntry(getTokenField(1, tokens));
-            currMacro = strdup(getTokenField(1, tokens));
+            addMacroEntry(secondField);
+            currMacro = strdup(secondField);
             inMcro = 1;
         }
         else if(isEndMacro(tokens, inMcro)){
-            printf("macro end in Line: %s\n", line);
             inMcro = 0;
         }
         else if(inMcro){
-            printf("macro data in Line: %s\n", line);
             addMacroLine(line, currMacro);
         }
         else{
-            printf("regular line in Line: %s\n", line);
-            addCell(line, fileTable);
-            setCellData(line, line, fileTable);
+            addLine(line, i, fileTable);
         }
+        freeTokenLine(tokens);
         line = readLine(file);
+        i++;
     }
 
-    printTable(fileTable);
-    writeFileFromTableData(output, fileTable, 1);
+    if(!hasErrors()) {
+        output = fopen("output.txt", "w+");
+        writeFileFromTableData(output, fileTable, 1);
+    }
 
+    if(secondField != NULL)
+        free(secondField);
+    if(currMacro != NULL){
+        free(currMacro);
+    }
+    if(line != NULL)
+        free(line);
     freeTable(fileTable);
-    freeTable(invalidTable);
+    freeTable(reservedWordsTable);
     freeTable(macroTable);
-    free(line);
-    freeTokenLine(tokens);
-    fclose(output);
+    
 
-    return 0;
+    if(hasErrors())
+        return NULL;
+
+    return output;
 }
 
 int isMacro(TokenLine* line, int inMcro) {
-    if(!strcmp(getTokenField(0, line), "mcro")) {
+    char* firstField = getTokenField(0, line);
+    char* secondField = getTokenField(1, line);
+    char* thirdField = getTokenField(2, line);
+    if(!strcmp(firstField, "mcro")) {
         if(inMcro) {
-            fprintf(stderr, "Error: Nested macros aren't supported. Line %d\n", getLineNumber(line));
-            return 0;
+            printError("Nested macros aren't supported", getLineNumber(line));
         }
-        if(getTokenField(1, line) == NULL) {
-            fprintf(stderr, "Error: Macro name is missing. Line %d\n", getLineNumber(line));
-            return 0;
+        else if(secondField == NULL) {
+            printError("Macro name is missing", getLineNumber(line));
         }
-        if(getTokenField(2, line) != NULL){
-            fprintf(stderr, "Error: Extra text after macro declaration. Line %d.\n", getLineNumber(line));
-            return 0;
+        else if(thirdField != NULL){
+            printError("Extra text after macro declaration", getLineNumber(line));
         }
-        if(inTable(getTokenField(1, line), invalidTable)) {
-            fprintf(stderr, "Error: Macro name is a reserved word. Line %d.\n", getLineNumber(line));
-            return 0;
+        else if(inTable(secondField, reservedWordsTable)) {
+            printError("Macro name is a reserved word", getLineNumber(line));
         }
-        if(inTable(getTokenField(1, line), macroTable)) {
-            fprintf(stderr, "Error: Macro name is already in use. Line %d.\n", getLineNumber(line));
-            return 0;
+        else if(inTable(secondField, macroTable)) {
+            printError("Macro name is already in use", getLineNumber(line));
         }
-        return 1;
-    }    
+        else{
+            free(firstField);
+            free(secondField);
+            free(thirdField);
+            return 1;
+        }
+    }
+    free(firstField);
+    free(secondField);
+    free(thirdField);    
     return 0;
 }
 
 int isEndMacro(TokenLine* line, int inMcro) {
     if(!strcmp(getTokenField(0, line), "endmcro")) {
         if(!inMcro){
-            fprintf(stderr, "Error: End of macro while not in macro. Line %d.\n", getLineNumber(line));
+            printError("End of macro while not in macro", getLineNumber(line));
             return 0;
         }
         if(getTokenField(1, line) != NULL) {
-            fprintf(stderr, "Error: Extra text after macro ending declaration. Line %d\n", getLineNumber(line));
+            printError("Extra text after macro ending declaration", getLineNumber(line));
             return 0;
         }
         return 1;
@@ -113,29 +132,33 @@ int addMacroEntry(char* name){
 }
 
 int addMacroLine(char* line, char* macroName){
-    char *newData, *oldData;
+    /*TODO: Maybe check if there is a label and adjust tabs?*/
+    char *newData, *oldData, *stripedLine = strip(line);
     oldData = getCellData(macroName, macroTable);
+    /*If first line in macro*/
     if(oldData == NULL){
+        /*+1 for tab for readabillity (we're not savages here)*/
         newData = malloc(sizeof(char) * (strlen(line) + 1));
         if(newData == NULL){
-            fprintf(stderr, "Error: Memory allocation failed.\n");
+            printError("Memory allocation failed", -1);
             return 0;
         }
-        strcpy(newData, strip(line));
-        strcat(newData, "\n");
+        newData[0] = '\t';
+        sprintf(newData, "\t%s", stripedLine);
     }
+    /*If not first line in macro*/
     else{
-        newData = malloc(sizeof(char) * (strlen(oldData) + strlen(line) + 1));
+        /*+2 for new line and tab for readabillity (we're not savages here) and \n*/
+        newData = malloc(sizeof(char) * (strlen(oldData) + strlen(line) + 2));
         if(newData == NULL){
-            fprintf(stderr, "Error: Memory allocation failed.\n");
+            printError("Memory allocation failed", -1);
             return 0;
         }
-        strcpy(newData, oldData);
-        strcat(newData, strip(line));
-        strcat(newData, "\n");
+        sprintf(newData, "%s\n\t%s", oldData, stripedLine);
     }
     setCellData(macroName, newData, macroTable);
 
+    free(stripedLine);
     free(newData);
     free(oldData);
     return 1;
@@ -154,15 +177,25 @@ int replaceMacro(Table* fileTable, TokenLine* line){
 int isValidMacro(TokenLine* line, int inMcro){
     if(inTable(getTokenField(0, line), macroTable)) {
         if(inMcro) {
-            fprintf(stderr, "Error: Nested macros aren't supported. Line %d\n", getLineNumber(line));
+            printError("Nested macros aren't supported", getLineNumber(line));
             return 0;
         }
         if(getTokenField(1, line) != NULL) {
-            fprintf(stderr, "Error: Extra text after macro use. Line %d\n", getLineNumber(line));
+            printError("Extra text after macro use", getLineNumber(line));
             return 0;
         }
         return 1;
     }
     
     return 0;
+}
+
+int addLine(char* line, int lineNum, Table* fileTable){
+    char* lineName;
+    lineName = malloc(sizeof(char) * (strlen("line ") + NUMBER_OF_DIGITS(lineNum) + 1));
+    sprintf(lineName, "line %d", lineNum);
+    addCell(lineName, fileTable);
+    setCellData(lineName, line, fileTable);
+    free(lineName);
+    return EXIT_SUCCESS;
 }

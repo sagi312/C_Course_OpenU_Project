@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <math.h>
+#include "config.h"
 #include "table.h"
 #include "inputOutput.h"
 
@@ -19,8 +21,7 @@ char* readLine(FILE* file){
     
     buffer = malloc(sizeof(char));
     if(buffer == NULL){
-        fprintf(stderr, "Error: Memory allocation failed.\n");
-        free(buffer);
+        printError("Memory allocation failed", -1);
         return 0;
     }
 
@@ -46,8 +47,7 @@ char* readLine(FILE* file){
     if(i == size){
         tmp = realloc(buffer, (++size)*sizeof(char));
         if(tmp == NULL){
-            fprintf(stderr, "Error: Memory allocation failed\n");
-            free(tmp);
+            printError("Memory allocation failed", -1);
             free(buffer);
             return 0;
         }
@@ -61,20 +61,30 @@ TokenLine* tokenizeLine(char* line, int lineNumber) {
     TokenLine* tokens = malloc(sizeof(TokenLine));
     int i = 0;
     char *tmp;
-
+    
     if(tokens == NULL){
-        fprintf(stderr, "Error: Memory allocation failed.\n");
+        printError("Memory allocation failed", -1);
         free(tokens);
         return NULL;
     }
-
+    
     tmp = strdup(line);
     tokens->lineNumber = lineNumber;
-
+    
     tokens->fields[0] = strdup(strtok(tmp, " \t"));
-    while(i < NUMBER_OF_FIELDS && tokens->fields[i] != NULL) {
+    /*Go over all fields not including the last one*/
+    while(i < NUMBER_OF_FIELDS-2 && tokens->fields[i] != NULL) {
         tokens->fields[++i] = strdup(strtok(NULL, " \t"));
     }
+    /*Add rest of line to last field or make rest of fields empty*/
+    if(i == NUMBER_OF_FIELDS-2 && tokens->fields[i] != NULL)
+        tokens->fields[++i] = strdup(strtok(NULL, ""));
+    else {
+        while(i < NUMBER_OF_FIELDS){
+            tokens->fields[++i] = NULL;
+        }
+    }
+
     free(tmp);
     return tokens;
 }
@@ -82,7 +92,8 @@ TokenLine* tokenizeLine(char* line, int lineNumber) {
 int freeTokenLine(TokenLine* line){
     int i;
     for(i = 0; i < NUMBER_OF_FIELDS; i++){
-        free(line->fields[i]);
+        if(line->fields[i] != NULL)
+            free(line->fields[i]);
     }
     free(line);
     return 1;
@@ -107,8 +118,7 @@ int printTokenLine(TokenLine* line){
 int writeFileFromTableData(FILE* file, Table* table, int doRewind){
     int tableSize = getTableSize(table);
     int i;
-    char* cellName;
-    char* cellData;
+    char *cellName, *cellData;
 
     if(doRewind)
         rewind(file);
@@ -143,5 +153,86 @@ char* strip(char* line){
         i++;
     }
     res = strdup(line + i);
+    return res;
+}
+
+void printWarning(char* warning, int lineNumber) {
+    if(lineNumber == -1)
+        fprintf(stderr, "Warning: %s\n", warning);
+    else
+        fprintf(stderr, "Warning in line %d: %s.\n", lineNumber, warning);
+}
+
+/*Use to keep track if there was an error printed*/
+int errorFlag = 0;
+
+void printError(char* error, int lineNumber) {
+    errorFlag = 1;
+    if(lineNumber == -1)
+        fprintf(stderr, "Error: %s\n", error);
+    else
+        fprintf(stderr, "Error in line %d: %s.\n", lineNumber, error);
+}
+
+int hasErrors(void) {
+    return errorFlag;
+}
+
+char* itob(int num){
+    char *res = malloc((BINARY_WORD_SIZE+1)*sizeof(char));
+    int i = 0;
+
+    if(num < 0) {
+        /*Invert the number*/
+        num = num * -1;
+
+        for(i = 0; i < BINARY_WORD_SIZE; i++){
+            /*11-i because we're starting from the least segnificent digit, and we want to print the inverted number*/
+            if(num & 1 == 1)
+                res[BINARY_WORD_SIZE-1-i] = '0';
+            else
+                res[BINARY_WORD_SIZE-1-i] = '1';
+            num >>= 1;
+        }
+    
+        /*Add 1 to the number*/
+        i = 0;
+        while(i < BINARY_WORD_SIZE && res[BINARY_WORD_SIZE-1-i] == '1'){
+            res[BINARY_WORD_SIZE-1-i] = '0';
+            i++;
+        }
+        if(i < 12)
+            res[BINARY_WORD_SIZE-1-i] = '1';
+        else
+            res[BINARY_WORD_SIZE-1-i] = '0';
+    }
+    else {
+        for(i = 0; i < BINARY_WORD_SIZE; i++){
+            /*11-i because we're starting from the least segnificent digit*/
+            if(num & 1 == 1)
+                res[BINARY_WORD_SIZE-1-i] = '1';
+            else
+                res[BINARY_WORD_SIZE-1-i] = '0';
+            num >>= 1;
+        }
+    }
+
+    res[BINARY_WORD_SIZE] = '\0';
+    return res;
+}
+
+char* itoa(int num){
+    char* res;
+    int size = 0;
+    if(num < 0)
+        size = NUMBER_OF_DIGITS(num * -1) + 2;
+    else if(num != 0)
+        size = NUMBER_OF_DIGITS(num) + 1;
+    res = malloc(sizeof(char) * size);
+    if(res == NULL) {
+        printError("Memory allocation failed", -1);
+        return EXIT_FAILURE;
+    }
+    sprintf(res, "%d", num);
     return res;
 }
