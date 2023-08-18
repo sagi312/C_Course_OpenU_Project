@@ -13,16 +13,15 @@ InstructionType getInstructType(TokenLine* tokens, Table* codeSymbolTable, Table
     for(i = 0; i < OP_NAMES_COUNT; i++) {
         addCell(opNames[i], opTable);
     }
-
     if(isComment(tokens))
         return Comment;
     if(isData(tokens, labelFlag))
         return Data;
     if(isString(tokens, labelFlag))
         return String;
-    if(isExtern(tokens, labelFlag, codeSymbolTable, dataSymbolTable))
+    if(isExtern(tokens, labelFlag))
         return Extern;
-    if(isEntry(tokens, labelFlag, codeSymbolTable, dataSymbolTable))
+    if(isEntry(tokens, labelFlag))
         return Entry;
     if(hasOp(tokens, opTable, labelFlag))
         return Op;
@@ -214,16 +213,15 @@ isString(TokenLine* tokens, int labelFlag) {
     return 0;
 }
 /*Check if the line has an extern declaration*/
-isExtern(TokenLine* tokens, int labelFlag, Table* codeSymbolTable, Table* dataSymbolTable) {
-    char *externDeclearation, *label;
-    int i;
+isExtern(TokenLine* tokens, int labelFlag) {
+    char *externDeclearation, *label, *parmString;
     if(labelFlag) {
         externDeclearation = getTokenField(1, tokens);
-        label = getParmString(1, tokens);
+        parmString = getParmString(1, tokens);
     }
     else {
         externDeclearation = getTokenField(0, tokens);
-        label = getParmString(0, tokens);
+        parmString = getParmString(0, tokens);
     }
 
     if(externDeclearation == NULL)
@@ -231,32 +229,72 @@ isExtern(TokenLine* tokens, int labelFlag, Table* codeSymbolTable, Table* dataSy
     if(!strcmp(externDeclearation, ".extern")) {
         if(labelFlag)
             printWarning("Label before an extern declaration has no meaning", getLineNumber(tokens));
-        if(label == NULL) {
+        if(parmString == NULL || strlen(parmString) < 1) {
             printWarning("Extern declaration without a label", getLineNumber(tokens));
             free(externDeclearation);
             return 1;
         }
 
-        if(!isValidLabel(label, getLineNumber(tokens), 1)) {
-            /*Errors will be printed by checking function*/
-            free(externDeclearation);
-            free(label);
-            return -1;
+        label = strtok(parmString, ", \t");
+        while(label != NULL) {
+            if(!isValidLabel(label, getLineNumber(tokens), 1)) {
+                /*Errors will be printed by checking function*/
+                free(externDeclearation);
+                free(parmString);
+                return -1;
+            }
+            label = strtok(NULL, ", \t");
         }
-        if(inTable(label, codeSymbolTable) || inTable(label, dataSymbolTable)){
-            printError("Extern label exists as local label", getLineNumber(tokens));
-            return -1;
-        }
+
         free(externDeclearation);
-        free(label);
+        free(parmString);
         return 1;
     }
     free(externDeclearation);
-    free(label);
+    free(parmString);
     return 0;
 }
 
-isEntry(TokenLine* tokens, int labelFlag, Table* codeSymbolTable, Table* dataSymbolTable) {
+isEntry(TokenLine* tokens, int labelFlag) {
+    char *entryDeclaration, *label, *parmString;
+    if(labelFlag) {
+        entryDeclaration = getTokenField(1, tokens);
+        parmString = getParmString(1, tokens);
+    }
+    else {
+        entryDeclaration = getTokenField(0, tokens);
+        parmString = getParmString(0, tokens);
+    }
+
+    if(entryDeclaration == NULL)
+        return 0;
+    if(!strcmp(entryDeclaration, ".entry")) {
+        printf("Entry declaration found\n");
+        if(labelFlag)
+            printWarning("Label before an entry declaration has no meaning", getLineNumber(tokens));
+        if(parmString == NULL || strlen(parmString) < 1) {
+            printWarning("Entry declaration without a label", getLineNumber(tokens));
+            free(entryDeclaration);
+            return 1;
+        }
+
+        label = strtok(parmString, ", \t");
+        while(label != NULL) {
+            if(!isValidLabel(label, getLineNumber(tokens), 1)) {
+                /*Errors will be printed by checking function*/
+                free(entryDeclaration);
+                free(parmString);
+                return -1;
+            }
+            label = strtok(NULL, ", \t");
+        }
+
+        free(entryDeclaration);
+        free(parmString);
+        return 1;
+    }
+    free(entryDeclaration);
+    free(parmString);
     return 0;
 }
 
