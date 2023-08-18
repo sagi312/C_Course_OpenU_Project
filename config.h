@@ -11,6 +11,7 @@
 #define MIN_NUM_OP -512
 #define MAX_CHAR 126
 #define MIN_CHAR 32
+#define OFFSET 100
 
 #define NUMBER_OF_DIGITS(x) (int)(ceil(log10(x))+1)
 
