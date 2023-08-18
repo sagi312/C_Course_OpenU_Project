@@ -16,7 +16,7 @@
             - shares some defs with preassembler, maybe another header file?
             - It's going to take 2-3 weeks*/
 firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
-    int ic = 0, dc = 0, i = 1, errorFlag = 0, labelFlag = 0;
+    int ic = OFFSET, dc = 0, i = 1, errorFlag = 0, labelFlag = 0;
     char *line;
     InstructionType type;
     TokenLine *tokens;
@@ -28,6 +28,7 @@ firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
     dataTable = createTable();
 
     line = readLine(file);
+    printf("Line %d: %s\n", i, line);
     while(line != NULL && strlen(line) > 0){
         tokens = tokenizeLine(line, i);
 
@@ -36,7 +37,6 @@ firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
             labelFlag = 1;
 
         type = getInstructType(tokens, codeSymbolTable, dataSymbolTable, labelFlag);
-
         /*Skip comments*/
         if(type == Comment) ;
         
@@ -65,9 +65,10 @@ firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
         /*Check if the line is a .extern line*/
         else if(type == Extern){
             printf("Line %d is a extern\n", i);
-            addExternLabels(tokens, symbolTable, labelFlag);
+            addExternLabels(tokens, codeSymbolTable, dataSymbolTable, labelFlag);
         }
 
+        /*Check if the line is an op*/
         else if(type == Op) {
             printf("Line %d is a op\n", i);
             if(labelFlag)
@@ -76,21 +77,18 @@ firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
             addOp(tokens, codeTable, labelFlag);
         }
 
-        i++;
         free(line);
         freeTokenLine(tokens);
+        i++;
+        labelFlag = 0;
         line = readLine(file);
     }
+
+    printTable(codeTable);
     if(errorFlag)
         return -1;
-    connectDataTable(symbolTable, codeSymbolTable, dataSymbolTable, ic);
-
-    printf("CODE TABLE\n");
-    printTable(codeTable);
-    printf("DATA TABLE\n");
-    printTable(dataTable);
-    printf("SYMBOL TABLE\n");
-    printTable(symbolTable);
+    connectSymbolTables(symbolTable, codeSymbolTable, dataSymbolTable, ic);
+    connectCodeTables(fileTable, codeTable, dataTable, ic);
     return 0;
 }
 
@@ -211,6 +209,7 @@ addData(TokenLine* tokens, Table* dataTable, int labelFlag) {
     /*Initilize strtok*/
     parm = strtok(parmString, ", \t");
     cellName = itoa(lastCell);
+    printf("data in cellName = %s\n", cellName);
     while(parm != NULL) {
         num = atoi(parm);
         if(num > MAX_NUM || num < MIN_NUM) {
@@ -249,6 +248,7 @@ addString(TokenLine* tokens, Table* dataTable, int labelFlag) {
     cellName = itoa(lastCell);
     /*Until i is on last ", but we want to allow " in the middle of the string so we check if the next char is a null terminator*/
     while(parmString[i+1] != '\0') {
+        printf("string in cellName = %s\n", cellName);
         c = parmString[i];
         if(c > MAX_CHAR || c < MIN_CHAR) {
             printError("Char out of range in string declaration", getLineNumber(tokens));
@@ -409,7 +409,7 @@ addOpEncoding(int opCode, int srcAddressType, int destAddressType, Table* codeTa
     encoding = itob(encodingInt);
     
     lastCell = getTableSize(codeTable);
-    cellName = itoa(lastCell);
+    cellName = itoa(lastCell+OFFSET);
     addCell(cellName, codeTable);
     setCellData(cellName, encoding, codeTable);
     free(encoding);
@@ -422,7 +422,8 @@ addParmEncoding(char* parm, int parmAddressType, Table* codeTable) {
     int encodingInt, lastCell;
     
     if(parmAddressType == 1){
-        encodingInt = atoi(parm);
+        /*The number is in bits 2-12. Bits 0-1 are 00 because the address is absolute*/
+        encodingInt = atoi(parm) << 2;
         encoding = itob(encodingInt);
     }
     else if(parmAddressType == 3){
@@ -436,7 +437,7 @@ addParmEncoding(char* parm, int parmAddressType, Table* codeTable) {
     }
     
     lastCell = getTableSize(codeTable);
-    cellName = itoa(lastCell);
+    cellName = itoa(lastCell+OFFSET);
     addCell(cellName, codeTable);
     setCellData(cellName, encoding, codeTable);
     free(encoding);
@@ -460,7 +461,7 @@ addRegistersEncoding(char* src, char* dest, Table* codeTable) {
 
     encoding = itob(encodingInt);
     lastCell = getTableSize(codeTable);
-    cellName = itoa(lastCell);
+    cellName = itoa(lastCell+OFFSET);
     addCell(cellName, codeTable);
     setCellData(cellName, encoding, codeTable);
     free(encoding);
@@ -506,7 +507,7 @@ addLabel(TokenLine* tokens, Table* symbolTable, int address) {
     }
     strncpy(labelName, label, strlen(label)-1);
     labelName[strlen(label)-1] = '\0';
-
+    
     labelAddress = itoa(address);
 
     addCell(labelName, symbolTable);
@@ -518,7 +519,7 @@ addLabel(TokenLine* tokens, Table* symbolTable, int address) {
     return EXIT_SUCCESS;
 }
 /*Add extern labels to the symbol table*/
-addExternLabels(TokenLine* tokens, Table* symbolTable, int labelFlag) {
+addExternLabels(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable, int labelFlag) {
     char *parmString, *labelName;
 
     if(labelFlag)
@@ -532,8 +533,20 @@ addExternLabels(TokenLine* tokens, Table* symbolTable, int labelFlag) {
     /*Initilize strtok*/
     labelName = strtok(parmString, ", \t");
     while(labelName != NULL) {
-        addCell(labelName, symbolTable);
-        setCellData(labelName, itoa(-1), symbolTable);
+        if(!isValidLabel(labelName, getLineNumber(tokens), 1)) {
+            free(parmString);
+            free(labelName);
+            return EXIT_FAILURE;
+        }
+
+        if(inTable(labelName, codeSymbolTable) || inTable(labelName, dataSymbolTable)) {
+            printError("Label already exists", getLineNumber(tokens));
+            free(parmString);
+            free(labelName);
+            return EXIT_FAILURE;
+        }
+        addCell(labelName, codeSymbolTable);
+        setCellData(labelName, "extern", codeSymbolTable);
 
         labelName = strtok(NULL, ", \t");
     }
@@ -543,7 +556,7 @@ addExternLabels(TokenLine* tokens, Table* symbolTable, int labelFlag) {
 }
 
 /*Connect the codeSymbolTable to the dataSymbolTable with the appropriate offsets*/
-connectDataTable(Table* symbolTable, Table* codeSymbolTable, Table* dataSymbolTable, int ic) {
+connectSymbolTables(Table* symbolTable, Table* codeSymbolTable, Table* dataSymbolTable, int ic) {
     char *currCell, *currCellData;
     int codeSize, dataSize, i;
 
@@ -556,12 +569,36 @@ connectDataTable(Table* symbolTable, Table* codeSymbolTable, Table* dataSymbolTa
         addCell(currCell, symbolTable);
         setCellData(currCell, currCellData, symbolTable);
     }
-    for(i = 0; i < codeSize; i++) {
+    for(i = 0; i < dataSize; i++) {
         currCell = getCellName(i, dataSymbolTable);
         currCellData = getCellData(currCell, dataSymbolTable);
         currCellData = itoa(atoi(currCellData) + ic);
         addCell(currCell, symbolTable);
         setCellData(currCell, currCellData, symbolTable);
+    }
+
+    return EXIT_SUCCESS;
+}
+
+connectCodeTables(Table* fileTable, Table* codeTable, Table* dataTable, int ic) {
+    char *currCell, *currCellData;
+    int codeSize, dataSize, i;
+
+    codeSize = getTableSize(codeTable);
+    dataSize = getTableSize(dataTable);
+
+    for(i = 0; i < codeSize; i++) {
+        currCell = getCellName(i, codeTable);
+        currCellData = getCellData(currCell, codeTable);
+        addCell(currCell, fileTable);
+        setCellData(currCell, currCellData, fileTable);
+    }
+    for(i = 0; i < dataSize; i++) {
+        currCell = getCellName(i, dataTable);
+        currCellData = getCellData(currCell, dataTable);
+        currCell = itoa(atoi(currCell) + ic);
+        addCell(currCell, fileTable);
+        setCellData(currCell, currCellData, fileTable);
     }
 
     return EXIT_SUCCESS;
