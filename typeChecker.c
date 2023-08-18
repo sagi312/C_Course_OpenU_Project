@@ -148,7 +148,6 @@ isData(TokenLine* tokens, int labelFlag){
 
         if(num == NULL) {
             printWarning("Data declaration without data", getLineNumber(tokens));
-            printf("Paramstring is %s\n", numberString);
             free(dataDeclearation);
             free(numberString);
             return 0;
@@ -269,7 +268,6 @@ isEntry(TokenLine* tokens, int labelFlag) {
     if(entryDeclaration == NULL)
         return 0;
     if(!strcmp(entryDeclaration, ".entry")) {
-        printf("Entry declaration found\n");
         if(labelFlag)
             printWarning("Label before an entry declaration has no meaning", getLineNumber(tokens));
         if(parmString == NULL || strlen(parmString) < 1) {

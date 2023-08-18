@@ -33,7 +33,6 @@ replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
                 return EXIT_FAILURE;
             }
             labelAddress = getCellData(labelName, symbolTable);
-            printf("Changing %s to %s\n", labelName, labelAddress);
             if(!strcmp(labelAddress, "extern")){
                 /*Then label is extern and address type is extern - 01*/
                 addressType = 1;
@@ -51,7 +50,6 @@ replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
             encodingInt = addressType;
             encodingInt += atoi(labelAddress) << 2;
             labelEncoding = itob(encodingInt);
-            printf("Changed %s to %s\n", labelName, labelEncoding);
             setCellData(line, labelEncoding, fileTable);
         }
     }

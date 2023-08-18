@@ -6,7 +6,7 @@
 #include "typeChecker.h"
 #include "config.h"
 
-int firstPass(FILE* file, Table* symbolTable, Table* fileTable);
+int firstPass(FILE* file, Table* symbolTable, Table* fileTable, int* icOut, int* dcOut);
 /*Get the number of words the data/code will take up in final file*/
 int getWordCount(TokenLine* tokens, InstructionType type, int labelFlag);
 /*Add data to the data table*/

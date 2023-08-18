@@ -8,7 +8,7 @@
 #include "config.h"
 #include "typeChecker.h"
 
-firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
+firstPass(FILE* file, Table* symbolTable, Table* fileTable, int* icOut, int* dcOut) {
     int ic = OFFSET, dc = 0, i = 1, errorFlag = 0, labelFlag = 0;
     char *line;
     InstructionType type;
@@ -21,7 +21,6 @@ firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
     dataTable = createTable();
 
     line = readLine(file);
-    printf("Line %d: %s\n", i, line);
     while(line != NULL && strlen(line) > 0){
         tokens = tokenizeLine(line, i);
 
@@ -35,7 +34,6 @@ firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
         
         /*Check if the line is a .data line*/
         else if(type == Data){
-            printf("Line %d is a data\n", i);
             if(labelFlag)
                 addLabel(tokens, dataSymbolTable, dc);
             else
@@ -46,7 +44,6 @@ firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
 
         /*Check if the line is a .string line*/
         else if(type == String){
-            printf("Line %d is a string\n", i);
             if(labelFlag)
                 addLabel(tokens, dataSymbolTable, dc);
             else
@@ -57,13 +54,11 @@ firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
 
         /*Check if the line is a .extern line*/
         else if(type == Extern){
-            printf("Line %d is a extern\n", i);
             addExternLabels(tokens, codeSymbolTable, dataSymbolTable, labelFlag);
         }
 
         /*Check if the line is an op*/
         else if(type == Op) {
-            printf("Line %d is a op\n", i);
             if(labelFlag)
                 addLabel(tokens, codeSymbolTable, ic);
             ic += getWordCount(tokens, Op, labelFlag);
@@ -77,12 +72,11 @@ firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
         line = readLine(file);
     }
 
-    printTable(codeTable);
-    if(errorFlag)
-        return -1;
     connectSymbolTables(symbolTable, codeSymbolTable, dataSymbolTable, ic);
     connectCodeTables(fileTable, codeTable, dataTable, ic);
-    return 0;
+    *icOut = ic;
+    *dcOut = dc;
+    return hasErrors() ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 /*Get the number of words the data/code will take up in final file*/
@@ -202,7 +196,6 @@ addData(TokenLine* tokens, Table* dataTable, int labelFlag) {
     /*Initilize strtok*/
     parm = strtok(parmString, ", \t");
     cellName = itoa(lastCell);
-    printf("data in cellName = %s\n", cellName);
     while(parm != NULL) {
         num = atoi(parm);
         if(num > MAX_NUM || num < MIN_NUM) {
@@ -241,7 +234,6 @@ addString(TokenLine* tokens, Table* dataTable, int labelFlag) {
     cellName = itoa(lastCell);
     /*Until i is on last ", but we want to allow " in the middle of the string so we check if the next char is a null terminator*/
     while(parmString[i+1] != '\0') {
-        printf("string in cellName = %s\n", cellName);
         c = parmString[i];
         if(c > MAX_CHAR || c < MIN_CHAR) {
             printError("Char out of range in string declaration", getLineNumber(tokens));
@@ -568,7 +560,6 @@ connectSymbolTables(Table* symbolTable, Table* codeSymbolTable, Table* dataSymbo
         addCell(currCell, symbolTable);
         setCellData(currCell, currCellData, symbolTable);
     }
-
     return EXIT_SUCCESS;
 }
 

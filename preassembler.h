@@ -4,7 +4,7 @@
 #include "inputOutput.h"
 #include "config.h"
 
-FILE* preAssemble(FILE* file);
+int preAssemble(FILE* file, Table* fileTable);
 int isMacro(TokenLine* line, int inMcro);
 int isEndMacro(TokenLine* line, int inMcro);
 int addMacroEntry(char* name);

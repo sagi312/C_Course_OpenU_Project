@@ -33,7 +33,7 @@ char* readLine(FILE* file){
                 fprintf(stderr, "Error: Memory allocation failed.\n");
                 free(tmp);
                 free(buffer);
-                return 0;
+                return NULL;
             }
             buffer = tmp;
         }
@@ -54,6 +54,7 @@ char* readLine(FILE* file){
         buffer = tmp;
     }
     buffer[i] = '\0';
+    
     return buffer;
 }
 
@@ -115,13 +116,11 @@ int printTokenLine(TokenLine* line){
     return 1;
 }
 
-int writeFileFromTableData(FILE* file, Table* table, int doRewind){
+int writeFileFromTableData(FILE* file, Table* table){
     int tableSize = getTableSize(table);
     int i;
     char *cellName, *cellData;
 
-    if(doRewind)
-        rewind(file);
     
     for(i = 0; i < tableSize; i++){
         cellName = getCellName(i, table);
@@ -178,6 +177,10 @@ int hasErrors(void) {
     return errorFlag;
 }
 
+int resetErrors(void){
+    return errorFlag = 0;
+}
+
 char* base64Encode(char* binary){
     /*split into 2 groups of 6 bits, convery to integer and translate to corrospounding char*/
     char* group1, *group2, *res;
@@ -215,8 +218,6 @@ char* base64Encode(char* binary){
     res[1] = itob64(dec);
     res[2] = '\0';
 
-    if(!strcmp("101001110100", binary))
-        printf("group1: %s, group2: %s, res: %s\n", group1, group2, res);
     free(group1);
     free(group2);
     return res;

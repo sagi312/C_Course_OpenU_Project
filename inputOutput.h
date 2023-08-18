@@ -10,7 +10,7 @@ typedef struct TokenLine TokenLine;
 
 char* readLine(FILE* file);
 TokenLine* tokenizeLine(char* line, int lineNumber);
-int writeFileFromTableData(FILE* file, Table* table, int doRewind);
+int writeFileFromTableData(FILE* file, Table* table);
 char* getTokenField(int num, TokenLine* line);
 int getLineNumber(TokenLine* line);
 int freeTokenLine(TokenLine* line);
@@ -21,6 +21,7 @@ char* strip(char*);
 void printWarning(char* warning, int lineNumber);
 void printError(char* error, int lineNumber);
 int hasErrors(void);
+int resetErrors(void);
 char* base64Encode(char* binary);
 char itob64(int dec);
 int btoiUnsigned(char* binary);
