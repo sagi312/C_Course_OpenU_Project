@@ -8,13 +8,6 @@
 #include "config.h"
 #include "typeChecker.h"
 
-/*problems  - easy way to find patterns, regex?
-            - complicated data handeling with tables, memory leaks
-            - table names are complicated to work with, maybe add an extra data field?
-            - need connect table function in table
-            - I'm going to need to write sooooo muchhhh headers god save me
-            - shares some defs with preassembler, maybe another header file?
-            - It's going to take 2-3 weeks*/
 firstPass(FILE* file, Table* symbolTable, Table* fileTable) {
     int ic = OFFSET, dc = 0, i = 1, errorFlag = 0, labelFlag = 0;
     char *line;
@@ -512,7 +505,6 @@ addLabel(TokenLine* tokens, Table* symbolTable, int address) {
 
     addCell(labelName, symbolTable);
     setCellData(labelName, labelAddress, symbolTable);
-
     free(label);
     free(labelName);
     free(labelAddress);

@@ -51,6 +51,7 @@ replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
             encodingInt = addressType;
             encodingInt += atoi(labelAddress) << 2;
             labelEncoding = itob(encodingInt);
+            printf("Changed %s to %s\n", labelName, labelEncoding);
             setCellData(line, labelEncoding, fileTable);
         }
     }

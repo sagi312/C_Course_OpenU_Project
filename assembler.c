@@ -12,7 +12,7 @@ int testInput(void);
 int testFisrtPass(void);
 
 int main(int argc, char* argv[]){
-    FILE* file = fopen("test3.txt", "r+");
+    FILE* file = fopen("test4.txt", "r+");
 
     assemble(file);
 
@@ -23,6 +23,8 @@ int main(int argc, char* argv[]){
 int assemble(FILE* file){
     Table *symbolTable, *fileTable, *externTable, *entryTable;
     FILE *asFile, *externFile, *entryFile, *obFile;
+    int tableSize, i;
+    char *binary, *base64;
 
     symbolTable = createTable();
     fileTable = createTable();
@@ -54,6 +56,14 @@ int assemble(FILE* file){
     printTable(externTable);
     printf("entryTable:\n");
     printTable(entryTable);
+
+    tableSize = getTableSize(fileTable);
+    for(i = 0; i < tableSize; i++){
+        
+        binary = getCellData(getCellName(i, fileTable), fileTable);
+        base64 = base64Encode(binary);
+        printf("%s\n", base64);
+    }
     if(hasErrors() == 0){
         if(getTableSize(externTable) > 0){
             externFile = fopen("extern.txt", "w");
