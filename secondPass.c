@@ -9,6 +9,7 @@
 #include "config.h"
 #include "typeChecker.h"
 
+/*Perform the second pass on the file. Replace all label placeholders with label addresses and create entry and extern tables*/
 secondPass(FILE* file, Table* symbolTable, Table* fileTable, Table* externTable, Table* entryTable){
 
     replaceLabels(symbolTable, fileTable, externTable);
@@ -17,6 +18,7 @@ secondPass(FILE* file, Table* symbolTable, Table* fileTable, Table* externTable,
     return EXIT_SUCCESS;
 }
 
+/*Replace all of the label placeholders with the correct addresses, and save the extern labels to their table*/
 replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
     int size, labelAddress, addressType, encodingInt, i, lastCell;
     char *labelName, *labelEncoding, *line, *cellName, *cellData;
@@ -57,6 +59,7 @@ replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
     return EXIT_SUCCESS;
 }
 
+/*Add an extern label to the extern table*/
 addExternLabel(Table* symbolTable, Table* externTable, char* labelName, int address){
     int lastCell;
     char *cellName, *cellData;
@@ -74,6 +77,7 @@ addExternLabel(Table* symbolTable, Table* externTable, char* labelName, int addr
     return EXIT_SUCCESS;
 }
 
+/*Go over the file and set up the entry labels in the entry table*/
 setEntryTable(FILE* file, Table* symbolTable, Table* entryTable){
     int labelFlag = 0, i = 1;
     char *line;
@@ -105,6 +109,7 @@ setEntryTable(FILE* file, Table* symbolTable, Table* entryTable){
     return 0;
 }
 
+/*Add an entry label to the entry table*/
 addEntry(TokenLine* tokens, Table* symbolTable, Table* entryTable){
     int lastCell, labelFlag = 0;
     char *cellName, *cellData, *labelName, *parmString;

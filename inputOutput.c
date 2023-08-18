@@ -12,6 +12,7 @@ struct TokenLine
     char* fields[NUMBER_OF_FIELDS];
 };
 
+/*Read a line dynammicly from file*/
 char* readLine(FILE* file){
     int i, size = 1;
     char *tmp, *buffer;
@@ -58,6 +59,7 @@ char* readLine(FILE* file){
     return buffer;
 }
 
+/*Tokenize a given line*/
 TokenLine* tokenizeLine(char* line, int lineNumber) {
     TokenLine* tokens = malloc(sizeof(TokenLine));
     int i = 0;
@@ -90,6 +92,7 @@ TokenLine* tokenizeLine(char* line, int lineNumber) {
     return tokens;
 }
 
+/*Free a token line*/
 int freeTokenLine(TokenLine* line){
     int i;
     for(i = 0; i < NUMBER_OF_FIELDS; i++){
@@ -100,6 +103,7 @@ int freeTokenLine(TokenLine* line){
     return 1;
 }
 
+/*Print a token line*/
 int printTokenLine(TokenLine* line){
     int i;
     printf("Line number: %d\n", line->lineNumber);
@@ -116,6 +120,21 @@ int printTokenLine(TokenLine* line){
     return 1;
 }
 
+/*Get the n'th (starting from 0) token field from a token line*/
+char* getTokenField(int num, TokenLine* line) {
+    char* res;
+    if(num < 0 || num > NUMBER_OF_FIELDS-1)
+        return NULL;
+    res = strdup(line->fields[num]);
+    return res;
+}
+
+/*Get the line number from a token field*/
+int getLineNumber(TokenLine* line) {
+    return line->lineNumber;
+}
+
+/*Write all the cells' data in the table to a file*/
 int writeFileFromTableData(FILE* file, Table* table){
     int tableSize = getTableSize(table);
     int i;
@@ -132,18 +151,7 @@ int writeFileFromTableData(FILE* file, Table* table){
     return 1;
 }
 
-char* getTokenField(int num, TokenLine* line) {
-    char* res;
-    if(num < 0 || num > NUMBER_OF_FIELDS-1)
-        return NULL;
-    res = strdup(line->fields[num]);
-    return res;
-}
-
-int getLineNumber(TokenLine* line) {
-    return line->lineNumber;
-}
-
+/*Strip a string from spaces*/
 char* strip(char* line){
     int i = 0;
     char* res;
@@ -155,6 +163,22 @@ char* strip(char* line){
     return res;
 }
 
+/*Duplicate a string. My version because the original isn't in the ansi standard*/
+char* strdup(char* str){
+    char* des;
+    if(str == NULL){
+        return NULL;
+    }
+    des = (char*) malloc(strlen(str)+1);
+    if(des == NULL){
+        fprintf(stderr, "Error: Memory allocation failed.\n");
+        return NULL;
+    }
+    strcpy(des, str);
+    return des;
+}
+
+/*Print a warning*/
 void printWarning(char* warning, int lineNumber) {
     if(lineNumber == -1)
         fprintf(stderr, "Warning: %s\n", warning);
@@ -165,6 +189,7 @@ void printWarning(char* warning, int lineNumber) {
 /*Use to keep track if there was an error printed*/
 int errorFlag = 0;
 
+/*Print an error*/
 void printError(char* error, int lineNumber) {
     errorFlag = 1;
     if(lineNumber == -1)
@@ -173,175 +198,12 @@ void printError(char* error, int lineNumber) {
         fprintf(stderr, "Error in line %d: %s.\n", lineNumber, error);
 }
 
+/*Check if there was any errors printed*/
 int hasErrors(void) {
     return errorFlag;
 }
 
+/*Reset the errors flag*/
 int resetErrors(void){
     return errorFlag = 0;
-}
-
-char* base64Encode(char* binary){
-    /*split into 2 groups of 6 bits, convery to integer and translate to corrospounding char*/
-    char* group1, *group2, *res;
-    int i, dec;
-
-    if(binary == NULL || strlen(binary) != 12)
-        return NULL;
-
-    group1 = malloc(7*sizeof(char));
-    group2 = malloc(7*sizeof(char));
-    res = malloc(3*sizeof(char));
-
-    if(group1 == NULL || group2 == NULL || res == NULL){
-        printError("Memory allocation failed", -1);
-        if(group1 != NULL)
-            free(group1);
-        if(group2 != NULL)
-            free(group2);
-        if(res != NULL)
-            free(res);
-        return NULL;
-    }
-
-    for(i = 0; i < 6; i++){
-        group1[i] = binary[i];
-        group2[i] = binary[i+6];
-    }
-
-    group1[6] = '\0';
-    group2[6] = '\0';
-
-    dec = btoiUnsigned(group1);
-    res[0] = itob64(dec);
-    dec = btoiUnsigned(group2);
-    res[1] = itob64(dec);
-    res[2] = '\0';
-
-    free(group1);
-    free(group2);
-    return res;
-}
-
-char itob64(int dec){
-    char res;
-    if(dec >= 0 && dec <= 25)
-        return (char)(dec + 'A');
-    else if(dec >= 26 && dec <= 51)
-        return (char)(dec - 26 + 'a');
-    else if(dec >= 52 && dec <= 61)
-        return (char)(dec - 52 + '0');
-    else if(dec == 62)
-        return '+';
-    else if(dec == 63)
-        return '/';
-    else
-        return '\0';
-}
-
-int btoiUnsigned(char* binary){
-    int res = 0, i = 0, length = 0;
-    if(binary == NULL || strlen(binary) < 1)
-        return 0;
-
-    length = strlen(binary);
-    for(i = 0; i < length; i++){
-        if(binary[length-1-i] == '1')
-            res += pow(2, i);
-    }
-    return res;
-}
-
-int btoi(char* binary){
-    int res = 0, i = 0, length = 0, sign = 1;
-    if(binary == NULL || strlen(binary) < 1)
-        return 0;
-
-    length = strlen(binary);
-    /*If negetive, we need to flip all bits, add 1, convert to decimal and convert to negetive*/
-    if(binary[0] == '1'){
-        sign = -1;
-        for(i = 0; i < length; i++){
-            if(binary[i] == '1')
-                binary[i] = '0';
-            else
-                binary[i] = '1';
-        }
-        /*Add 1*/
-        i = 0;
-        while(i < length && binary[length-1-i] == '1'){
-            binary[length-1-i] = '0';
-            i++;
-        }
-        if(i < 12)
-            binary[length-1-i] = '1';
-        else
-            binary[length-1-i] = '0';
-    }
-
-    for(i = 0; i < length; i++){
-        if(binary[length-1-i] == '1')
-            res += pow(2, i);
-    }
-
-    return res * sign;
-}
-
-char* itob(int num){
-    char *res = malloc((BINARY_WORD_SIZE+1)*sizeof(char));
-    int i = 0;
-
-    if(num < 0) {
-        /*Invert the number*/
-        num = num * -1;
-
-        for(i = 0; i < BINARY_WORD_SIZE; i++){
-            /*11-i because we're starting from the least segnificent digit, and we want to print the inverted number*/
-            if(num & 1 == 1)
-                res[BINARY_WORD_SIZE-1-i] = '0';
-            else
-                res[BINARY_WORD_SIZE-1-i] = '1';
-            num >>= 1;
-        }
-    
-        /*Add 1 to the number*/
-        i = 0;
-        while(i < BINARY_WORD_SIZE && res[BINARY_WORD_SIZE-1-i] == '1'){
-            res[BINARY_WORD_SIZE-1-i] = '0';
-            i++;
-        }
-        if(i < 12)
-            res[BINARY_WORD_SIZE-1-i] = '1';
-        else
-            res[BINARY_WORD_SIZE-1-i] = '0';
-    }
-    else {
-        for(i = 0; i < BINARY_WORD_SIZE; i++){
-            /*11-i because we're starting from the least segnificent digit*/
-            if(num & 1 == 1)
-                res[BINARY_WORD_SIZE-1-i] = '1';
-            else
-                res[BINARY_WORD_SIZE-1-i] = '0';
-            num >>= 1;
-        }
-    }
-
-    res[BINARY_WORD_SIZE] = '\0';
-    return res;
-}
-
-char* itoa(int num){
-    char* res;
-    int size = 0;
-    if(num < 0)
-        size = NUMBER_OF_DIGITS(num * -1) + 2;
-    else if(num != 0)
-        size = NUMBER_OF_DIGITS(num) + 1;
-    res = malloc(sizeof(char) * size);
-    if(res == NULL) {
-        printError("Memory allocation failed", -1);
-        return EXIT_FAILURE;
-    }
-    sprintf(res, "%d", num);
-    return res;
 }

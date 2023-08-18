@@ -9,7 +9,7 @@ struct Table{
     struct Table* nextCell;
 };
 
-
+/*Creates a table*/
 Table* createTable(void) {
     Table* table = (Table*) malloc(sizeof(Table));
     
@@ -30,6 +30,7 @@ Table* createTable(void) {
     return table;
 }
 
+/*Adds a cell to the table*/
 int addCell(char* name, Table* table) {
     /*To loop on table*/
     Table* pointer = table;
@@ -62,6 +63,7 @@ int addCell(char* name, Table* table) {
     return 1;
 }
 
+/*Sets the data of a cell*/
 int setCellData(char* name, char* data, Table* table){
     /*To loop on table*/
     Table* pointer = table;
@@ -87,6 +89,7 @@ int setCellData(char* name, char* data, Table* table){
 
 }
 
+/*Gets the data of a cell*/
 char* getCellData(char* name, Table* table) {
     /*Return copy of string for saftey and enacpsulation*/
     char* res = NULL;
@@ -109,6 +112,7 @@ char* getCellData(char* name, Table* table) {
     return NULL;
 }
 
+/*Gets the name of a cell in a given index*/
 char* getCellName(int index, Table* table){
     /*Return copy of string for saftey and enacpsulation*/
     char* res = NULL;
@@ -132,6 +136,7 @@ char* getCellName(int index, Table* table){
     return NULL;
 }
 
+/*Removes a cell from the table*/
 int removeCell(char* name, Table* table){
     /*To loop on table*/
     Table* pointer = table;
@@ -164,6 +169,7 @@ int removeCell(char* name, Table* table){
     return 0;
 }
 
+/*Check if a cell is in a table*/
 int inTable(char* name, Table* table) {
     /*To loop on table*/
     Table* pointer = table;
@@ -183,6 +189,7 @@ int inTable(char* name, Table* table) {
     return 0;
 }
 
+/*Get the table size (not including the header)*/
 int getTableSize(Table* table) {
     /*To loop on table*/
     Table* pointer = table;
@@ -202,6 +209,7 @@ int getTableSize(Table* table) {
     return size-1;
 }
 
+/*Free the table from memory*/
 int freeTable(Table* table) {
     Table* thisCell = table;
     Table* lastCell = table;
@@ -222,6 +230,7 @@ int freeTable(Table* table) {
     return 1;
 }
 
+/*Print the table*/
 int printTable(Table* table) {
     /*Skip header*/
     Table* pointer = table->nextCell;
@@ -241,38 +250,4 @@ int printTable(Table* table) {
     }
     printf("\n");
     return 1;
-}
-
-char* strdup(char* str){
-    char* des;
-    if(str == NULL){
-        return NULL;
-    }
-    des = (char*) malloc(strlen(str)+1);
-    if(des == NULL){
-        fprintf(stderr, "Error: Memory allocation failed.\n");
-        return NULL;
-    }
-    strcpy(des, str);
-    return des;
-}
-
-int connectTables(Table* dest, Table* copy){
-    Table* pointer = dest;
-
-    if(dest == NULL || copy == NULL || dest->nextCell == NULL){
-        return EXIT_FAILURE;
-    }
-
-    while(pointer->nextCell != NULL)
-        pointer = pointer->nextCell;
-    
-    pointer->nextCell = copy->nextCell;
-
-    /*Free header of copy table*/
-    free(copy->cellData);
-    free(copy->cellName);
-    free(copy);   
-     
-    return EXIT_SUCCESS;
 }
