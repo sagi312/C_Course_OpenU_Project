@@ -4,6 +4,7 @@
 #define CONFIG_DEFS
 #define MAX_LABEL_LENGTH 31
 #define MAX_LINE_LENGTH 80
+#define MAX_MEMORY_USE 1024
 #define BINARY_WORD_SIZE 12
 #define MAX_NUM 2047
 #define MIN_NUM -2048

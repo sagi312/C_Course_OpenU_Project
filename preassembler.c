@@ -1,13 +1,24 @@
 #include <stdio.h>
-#include <string.h>
-#include <math.h>
+#include <stdlib.h>
+#include "config.h"
 #include "table.h"
 #include "inputOutput.h"
 #include "preassembler.h"
-#include "config.h"
-#define NUMBER_OF_DIGITS(x) (int)(ceil(log10(x))+1)
+
+/*Local functions*/
+int isValidMacro(TokenLine* line, int inMcro);
+int replaceMacro(Table* fileTable, TokenLine* line);
+int isMacro(TokenLine* line, int inMcro);
+int isEndMacro(TokenLine* line, int inMcro);
+int addMacroEntry(char* name);
+int addMacroLine(char* line, char* macroName);
+int addLine(char* line, int lineNum, Table* fileTable);
+
+
 
 Table *reservedWordsTable, *macroTable;
+
+/*Preassemble the file to the file table by expending all macros*/
 int preAssemble(FILE* file, Table* fileTable){
     TokenLine* tokens;
     char *line, *currMacro, *secondField;
@@ -74,6 +85,7 @@ int preAssemble(FILE* file, Table* fileTable){
     return EXIT_SUCCESS;
 }
 
+/*Check if a given token line is a valid macro start*/
 int isMacro(TokenLine* line, int inMcro) {
     char* firstField = getTokenField(0, line);
     char* secondField = getTokenField(1, line);
@@ -107,6 +119,7 @@ int isMacro(TokenLine* line, int inMcro) {
     return 0;
 }
 
+/*Check if a given token line is a valid macro end*/
 int isEndMacro(TokenLine* line, int inMcro) {
     if(!strcmp(getTokenField(0, line), "endmcro")) {
         if(!inMcro){
@@ -122,13 +135,14 @@ int isEndMacro(TokenLine* line, int inMcro) {
     return 0;
 }
 
+/*Add a new macro entry to the macro table*/
 int addMacroEntry(char* name){
     addCell(name, macroTable);
     return 1;
 }
 
+/*Add a line to a given macro's contents*/
 int addMacroLine(char* line, char* macroName){
-    /*TODO: Maybe check if there is a label and adjust tabs?*/
     char *newData, *oldData, *stripedLine = strip(line);
     oldData = getCellData(macroName, macroTable);
     /*If first line in macro*/
@@ -160,6 +174,7 @@ int addMacroLine(char* line, char* macroName){
     return 1;
 }
 
+/*Replace a macro with it's contents*/
 int replaceMacro(Table* fileTable, TokenLine* line){
     char *data, *name = getTokenField(0, line);
     data = getCellData(name, macroTable);
@@ -170,6 +185,7 @@ int replaceMacro(Table* fileTable, TokenLine* line){
     return 1;
 }
 
+/*Check if a given token line is a valid macro use*/
 int isValidMacro(TokenLine* line, int inMcro){
     if(inTable(getTokenField(0, line), macroTable)) {
         if(inMcro) {
@@ -186,6 +202,7 @@ int isValidMacro(TokenLine* line, int inMcro){
     return 0;
 }
 
+/*Add a line to the file table*/
 int addLine(char* line, int lineNum, Table* fileTable){
     char* lineName;
     lineName = malloc(sizeof(char) * (strlen("line ") + NUMBER_OF_DIGITS(lineNum) + 1));

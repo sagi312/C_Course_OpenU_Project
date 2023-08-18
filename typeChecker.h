@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <ctype.h>
-#include "inputOutput.h"
-#include "table.h"
 #include "config.h"
+#include "table.h"
+#include "inputOutput.h"
 
 #ifndef TYPECHECKER_H
 typedef enum InstructionType{Comment, Op, Data, String, Extern, Entry} InstructionType;
@@ -21,3 +21,4 @@ int isEntry(TokenLine* tokens, int labelFlag);
 int isRegister(char* line);
 int isNum(char* num);
 int isStringParm(char* string);
+char* getParmString(int lastField, TokenLine* tokens);

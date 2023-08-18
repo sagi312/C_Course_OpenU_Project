@@ -1,19 +1,23 @@
 #include <stdio.h>
+#include "config.h"
 #include "table.h"
 #include "inputOutput.h"
+#include "converter.h"
 #include "preassembler.h"
 #include "firstPass.h"
 #include "secondPass.h"
-#include "typeChecker.h"
 
-
-int testInput(void);
-int testFisrtPass(void);
+/*Add a suffix to a given file name*/
 char* addFileSuffix(char* name, char* suffix);
-Table* encodeFileBase64(FILE* file, Table* table);
 
+/*Encode a file table to base 64 assuming it is in binary format*/
+Table* encodeTableBase64(Table* table);
+
+/*Assemble a file to .ob, .ent and .ext files*/
+int assemble(char* name);
+
+/*This function will assemble which file given to it as an argument*/
 int main(int argc, char* argv[]){
-    FILE* file;
     char *name;
     int i;
 
@@ -39,16 +43,18 @@ int main(int argc, char* argv[]){
     return EXIT_SUCCESS;
 }  
 
+/*Assemble a file to .ob, .ent and .ext files*/
 int assemble(char* name){
     Table *symbolTable, *amTable, *fileTable, *externTable, *entryTable, *encodedTable;
     FILE *amFile, *asFile, *obFile, *entFile, *extFile;
-    int tableSize, i, ic, dc;
-    char *binary, *base64, *amName, *asName, *obName, *entName, *extName;
+    int ic, dc;
+    char *amName, *asName, *obName, *entName, *extName;
 
+    /*Open file*/
     asName = addFileSuffix(name, ".as");
     if(asName == NULL)
         return EXIT_FAILURE;
-    asFile = fopen(asName, "r+");
+    asFile = fopen(asName, "r");
     if(asFile == 0){
         printError("File not found", -1);
         return EXIT_FAILURE;
@@ -60,25 +66,34 @@ int assemble(char* name){
     entryTable = createTable();
     amTable = createTable();
 
+    /*Preassemble*/
     if(preAssemble(asFile, amTable) == EXIT_FAILURE){
         return EXIT_FAILURE;
     }
     fclose(asFile);
+
     if(hasErrors() == 0) {
+
+        /*Save preassembled file*/
         amName = addFileSuffix(name, ".am");
         if(amName == NULL)
             return EXIT_FAILURE;
         amFile = fopen(amName, "w+");
         writeFileFromTableData(amFile, amTable);
+
+        /*First pass*/
         rewind(amFile);
         firstPass(amFile, symbolTable, fileTable, &ic, &dc);
+
+        /*Second pass*/
         if(hasErrors() == 0) {
-            rewind(asFile);
-            secondPass(asFile, symbolTable, fileTable, externTable, entryTable);
+            rewind(amFile);
+            secondPass(amFile, symbolTable, fileTable, externTable, entryTable);
         }
     }
 
     if(hasErrors() == 0){
+        /*Save ext file if there are extern labels*/
         if(getTableSize(externTable) > 0){
             extName = addFileSuffix(name, ".ext");
             if(extName == NULL)
@@ -87,6 +102,7 @@ int assemble(char* name){
             writeFileFromTableData(extFile, externTable);
             fclose(extFile);
         }
+        /*Save ent file if there are entry labels*/
         if(getTableSize(entryTable) > 0){
             entName = addFileSuffix(name, ".ent");
             if(entName == NULL)
@@ -95,16 +111,18 @@ int assemble(char* name){
             writeFileFromTableData(entFile, entryTable);
             fclose(entFile);
         }
-        if(getTableSize(fileTable) > 0){
-            obName = addFileSuffix(name, ".ob");
-            if(obName == NULL)
-                return EXIT_FAILURE;
-            obFile = fopen(obName, "w");
-            encodedTable = encodeFileBase64(asFile, fileTable);
-            fprintf(obFile, "%d %d\n", ic-OFFSET, dc);
-            writeFileFromTableData(obFile, encodedTable);
-            fclose(obFile);
-        }
+        /*Save ob file*/
+        obName = addFileSuffix(name, ".ob");
+        if(obName == NULL)
+            return EXIT_FAILURE;
+        obFile = fopen(obName, "w");
+        
+        /*Encode table*/
+        encodedTable = encodeTableBase64(fileTable);
+        /*Save ic and dc to top of file*/
+        fprintf(obFile, "%d %d\n", ic-OFFSET, dc);
+        writeFileFromTableData(obFile, encodedTable);
+        fclose(obFile);
     }
 
     fclose(asFile);
@@ -116,7 +134,8 @@ int assemble(char* name){
     return EXIT_SUCCESS;
 }
 
-Table* encodeFileBase64(FILE* file, Table* table){
+/*Encode a file table to base 64 assuming it is in binary format*/
+Table* encodeTableBase64(Table* table){
     Table* base64Table = createTable();
     char* lineName, *lineData, *base64;
     int i, size;
@@ -134,6 +153,7 @@ Table* encodeFileBase64(FILE* file, Table* table){
     return base64Table;
 }
 
+/*Add a suffix to a given file name*/
 char* addFileSuffix(char* name, char* suffix){
     char* newName;
     newName = malloc(strlen(name) + strlen(suffix) + 1);
@@ -144,75 +164,4 @@ char* addFileSuffix(char* name, char* suffix){
     strcpy(newName, name);
     strcat(newName, suffix);
     return newName;
-}
-
-int testFirstPass(void) {
-    FILE* file = fopen("test2.txt", "r");
-    Table* opTable = createTable(), *codeSymbolTable = createTable(), *dataSymbolTable = createTable(), *dataTable = createTable(), *codeTable = createTable();
-    TokenLine* tokens;
-    InstructionType type;
-    char *opNames[] = OP_NAMES, *line;
-    int i, labelFlag;
-
-    for(i = 0; i < 16; i++){
-        addCell(opNames[i], opTable);
-        setCellData(opNames[i], opNames[i], opTable);
-    }
-
-    addCell("hello", codeSymbolTable);
-
-    labelFlag = i = 0;
-    line = readLine(file);
-    while(line != NULL && strlen(line) > 0){
-        printf("%s\n", line);
-        i++;
-        tokens = tokenizeLine(line, i);
-
-        if(hasLabel(tokens, codeSymbolTable, dataSymbolTable) != 0) {
-            printf("Line %d has a label.\n", i);
-            labelFlag = 1;
-        }
-        type = getInstructType(tokens, codeSymbolTable, dataSymbolTable, labelFlag);
-        if(type == Comment)
-            printf("Line %d is a comment.\n", i);
-        
-        if(type == Op) {
-            addOp(tokens, codeTable, labelFlag);
-        }
-        else if(type == Data) {
-            addData(tokens, dataTable, labelFlag);
-        }
-        else if(type == String) {
-            addString(tokens, dataTable, labelFlag);
-        }
-        else if(type == Extern)
-            printf("Line %d is an extern.\n", i);
-
-        freeTokenLine(tokens);
-        free(line);
-        labelFlag = 0;
-        line = readLine(file);
-    }
-
-    printTable(dataTable);
-    printTable(codeTable);
-
-    return 0;
-}
-
-int testInput(void){
-    FILE* file = fopen("test.txt", "r");
-    char* line;
-    TokenLine* tokenize;
-    line = readLine(file);
-    while(strlen(line) > 0 && line != NULL){
-        printf("%s\n", line);
-        tokenize = tokenizeLine(line, 0);
-        printTokenLine(tokenize);
-        freeTokenLine(tokenize);
-        free(line);
-        line = readLine(file);
-    }
-
-    return 0;
 }

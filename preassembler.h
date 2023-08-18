@@ -1,14 +1,8 @@
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
+#include "config.h"
 #include "table.h"
 #include "inputOutput.h"
-#include "config.h"
 
+/*Preassemble the file to the file table by expending all macros*/
 int preAssemble(FILE* file, Table* fileTable);
-int isMacro(TokenLine* line, int inMcro);
-int isEndMacro(TokenLine* line, int inMcro);
-int addMacroEntry(char* name);
-int addMacroLine(char* line, char* macroName);
-int replaceMacro(Table* fileTable, TokenLine* line);
-int isValidMacro(TokenLine* line, int inMcro);
-int addLine(char* line, int lineNum, Table* fileTable);
