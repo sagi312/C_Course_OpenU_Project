@@ -35,6 +35,8 @@ int replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
         if(labelName[0] != '0' && labelName[0] != '1'){
             if(!inTable(labelName, symbolTable)){
                 printError("Label is not defined", i);
+                free(line);
+                free(labelName);
                 return EXIT_FAILURE;
             }
             labelAddress = getCellData(labelName, symbolTable);
@@ -56,7 +58,15 @@ int replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
             encodingInt += atoi(labelAddress) << 2;
             labelEncoding = itob(encodingInt);
             setCellData(line, labelEncoding, fileTable);
+            
+            free(labelEncoding);
+            /*Only free if label isn't extern - if it is extern than the string is a constant*/
+            if(addressType == 2){
+                free(labelAddress);
+            }
         }
+        free(line);
+        free(labelName);
     }
     
     return EXIT_SUCCESS;
@@ -69,13 +79,14 @@ int addExternLabel(Table* symbolTable, Table* externTable, char* labelName, int 
     
     lastCell = getTableSize(externTable);
     cellName = itoa(lastCell);
-    /*space for label name + \t + address + \n*/
-    cellData = malloc(strlen(labelName) + 2 + NUMBER_OF_DIGITS(address));
+    /*space for label name + \t + address + \n + \0*/
+    cellData = malloc(strlen(labelName) + 3 + NUMBER_OF_DIGITS(address));
 
     sprintf(cellData, "%s\t%d\n", labelName, address);
     addCell(cellName, externTable);
     setCellData(cellName, cellData, externTable);
     free(cellData);
+    free(cellName);
 
     return EXIT_SUCCESS;
 }
@@ -109,12 +120,14 @@ int setEntryTable(FILE* file, Table* symbolTable, Table* entryTable){
         labelFlag = 0;
         line = readLine(file);
     }
+    if(line != NULL)
+        free(line);
     return 0;
 }
 
 /*Add an entry label to the entry table*/
 int addEntry(TokenLine* tokens, Table* symbolTable, Table* entryTable){
-    int lastCell, labelFlag = 0;
+    int lastCell, labelFlag = 0, size;
     char *cellName, *cellData, *labelName, *labelAddress, *parmString;
 
     if(hasLabel(tokens, symbolTable, NULL) != 0)
@@ -127,6 +140,8 @@ int addEntry(TokenLine* tokens, Table* symbolTable, Table* entryTable){
 
     if(parmString == NULL || strlen(parmString) < 1){
         printError("No label found for entry", getLineNumber(tokens));
+        if(parmString != NULL)
+            free(parmString);
         return EXIT_FAILURE;
     }
 
@@ -147,15 +162,22 @@ int addEntry(TokenLine* tokens, Table* symbolTable, Table* entryTable){
         else {
             lastCell = getTableSize(entryTable);
             cellName = itoa(lastCell);
-            /*space for label name + \t + address + \n*/
-            cellData = malloc(strlen(labelName) + 2 + NUMBER_OF_DIGITS(lastCell));
+            /*space for label name + \t + address + \n + \0*/
+            size = strlen(labelName) + 3 + NUMBER_OF_DIGITS(atoi(labelAddress));
+            cellData = malloc(sizeof(char) * size);
             sprintf(cellData, "%s\t%s\n", labelName, labelAddress);
             addCell(cellName, entryTable);
             setCellData(cellName, cellData, entryTable);
+
             free(cellData);
+            free(cellName);
         }
         labelName = strtok(NULL, " ,\t");
+
+        free(labelAddress);
     }
+
+    free(parmString);
 
     return EXIT_SUCCESS;
 }

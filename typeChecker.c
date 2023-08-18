@@ -7,6 +7,7 @@
 
 InstructionType getInstructType(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable, int labelFlag) {
     Table* opTable = createTable();
+    InstructionType type;
     int i;
     char* opNames[] = OP_NAMES;
 
@@ -14,18 +15,22 @@ InstructionType getInstructType(TokenLine* tokens, Table* codeSymbolTable, Table
         addCell(opNames[i], opTable);
     }
     if(isComment(tokens))
-        return Comment;
-    if(isData(tokens, labelFlag))
-        return Data;
-    if(isString(tokens, labelFlag))
-        return String;
-    if(isExtern(tokens, labelFlag))
-        return Extern;
-    if(isEntry(tokens, labelFlag))
-        return Entry;
-    if(hasOp(tokens, opTable, labelFlag))
-        return Op;
-    return -1;
+        type = Comment;
+    else if(isData(tokens, labelFlag))
+        type = Data;
+    else if(isString(tokens, labelFlag))
+        type = String;
+    else if(isExtern(tokens, labelFlag))
+        type = Extern;
+    else if(isEntry(tokens, labelFlag))
+        type = Entry;
+    else if(hasOp(tokens, opTable, labelFlag))
+        type = Op;
+    else
+        type = -1;
+    
+    freeTable(opTable);
+    return type;
 }
 
 /*Check if a line is a comment*/
@@ -51,7 +56,7 @@ int hasLabel(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable){
 
     if(firstField[strlen(firstField) - 1] == ':') {
         
-        name = malloc(sizeof(char) * (strlen(firstField)-1));
+        name = malloc(sizeof(char) * (strlen(firstField)));
         if(name == NULL) {
             printError("Memory allocation failed", -1);
             return EXIT_FAILURE;
@@ -337,7 +342,8 @@ char* getParmString(int lastField, TokenLine* tokens) {
         return NULL;
         
     while((nextField = getTokenField(++lastField, tokens)) != NULL) {
-        parmString = realloc(parmString, sizeof(char) * (strlen(parmString) + strlen(nextField)));
+        /*We need to allocate enough space for parmString + nextField + /0*/
+        parmString = realloc(parmString, sizeof(char) * (strlen(parmString) + strlen(nextField) + 1));
         if(parmString == NULL){
             printError("Memory allocation failed", getLineNumber(tokens));
             return NULL;

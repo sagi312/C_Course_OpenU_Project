@@ -83,7 +83,7 @@ TokenLine* tokenizeLine(char* line, int lineNumber) {
     if(i == NUMBER_OF_FIELDS-2 && tokens->fields[i] != NULL)
         tokens->fields[++i] = strdup(strtok(NULL, ""));
     else {
-        while(i < NUMBER_OF_FIELDS){
+        while(i < NUMBER_OF_FIELDS-1){
             tokens->fields[++i] = NULL;
         }
     }
@@ -144,8 +144,11 @@ int writeFileFromTableData(FILE* file, Table* table){
     for(i = 0; i < tableSize; i++){
         cellName = getCellName(i, table);
         cellData = getCellData(cellName, table);
-        if(cellData != NULL)
+        if(cellData != NULL) {
             fprintf(file, "%s\n", cellData);
+            free(cellData);
+        }
+        free(cellName);
     }
     fflush(file);
     return 1;

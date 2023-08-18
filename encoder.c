@@ -11,6 +11,7 @@ int getAddresingType(char* parm, int lineNumber);
 int addOpEncoding(int opCode, int srcAddressType, int destAddressType, Table* codeTable);
 int addParmEncoding(char* parm, int parmAddressType, Table* codeTable);
 int addRegistersEncoding(char* src, char* dest, Table* codeTable);
+int freeTables(Table* table1, Table* table2, Table* table3, Table* table4);
 
 
 /*Add data to the data table*/
@@ -32,11 +33,13 @@ int addData(TokenLine* tokens, Table* dataTable, int labelFlag) {
 
     /*Initilize strtok*/
     parm = strtok(parmString, ", \t");
-    cellName = itoa(lastCell);
     while(parm != NULL) {
+        cellName = itoa(lastCell);
         num = atoi(parm);
         if(num > MAX_NUM || num < MIN_NUM) {
             printError("Number out of range in data declaration", getLineNumber(tokens));
+            free(parmString);
+            free(cellName);
             return EXIT_FAILURE;
         }
         cellData = itob(num);
@@ -46,9 +49,9 @@ int addData(TokenLine* tokens, Table* dataTable, int labelFlag) {
         free(cellData);
         free(cellName);
         lastCell++;
-        cellName = itoa(lastCell);
         parm = strtok(NULL, ", \t");
     }
+    free(parmString);
     return EXIT_SUCCESS;
 }
 
@@ -69,9 +72,9 @@ int addString(TokenLine* tokens, Table* dataTable, int labelFlag) {
     /*Get last cell name*/
     lastCell = getTableSize(dataTable);
 
-    cellName = itoa(lastCell);
     /*Until i is on last ", but we want to allow " in the middle of the string so we check if the next char is a null terminator*/
     while(parmString[i+1] != '\0') {
+        cellName = itoa(lastCell);
         c = parmString[i];
         if(c > MAX_CHAR || c < MIN_CHAR) {
             printError("Char out of range in string declaration", getLineNumber(tokens));
@@ -84,15 +87,18 @@ int addString(TokenLine* tokens, Table* dataTable, int labelFlag) {
         free(cellData);
         free(cellName);
         lastCell++;
-        cellName = itoa(lastCell);
         i++;
     }
-
+    
     /*Add null terminator*/
     cellName = itoa(lastCell);
     cellData = itob((int)'\0');
     addCell(cellName, dataTable);
     setCellData(cellName, cellData, dataTable);
+
+    free(cellData);
+    free(cellName);
+    free(parmString);
 
     return EXIT_SUCCESS;
 }
@@ -104,7 +110,7 @@ int addOp(TokenLine* tokens, Table* codeTable, int labelFlag) {
     char *group1Arr[] = OP_GROUP1, *group2Arr[] = OP_GROUP2, *group3Arr[] = OP_GROUP3, *opCodesArr[] = OP_NAMES;
 
     /*function variables*/
-    char *opName, *parmString, *src, *dest;
+    char *opName, *parmString, *src, *dest, *opCodeStr;
     int opCode, destAddressType, srcAddressType, i;
 
     /*Get the correct parm string*/
@@ -119,6 +125,8 @@ int addOp(TokenLine* tokens, Table* codeTable, int labelFlag) {
 
     if(opName == NULL) {
         printError("Missing operation name", getLineNumber(tokens));
+        if(parmString != NULL)
+            free(parmString);
         return EXIT_FAILURE;
     }
 
@@ -136,16 +144,25 @@ int addOp(TokenLine* tokens, Table* codeTable, int labelFlag) {
         addCell(group3Arr[i], group3);
     for(i = 0; i < OP_NAMES_COUNT; i++) {
         addCell(opCodesArr[i], opCodes);
-        setCellData(opCodesArr[i], itoa(i), opCodes);
+        opCodeStr = itoa(i);
+        setCellData(opCodesArr[i], opCodeStr, opCodes);
+        free(opCodeStr);
     }
 
     if(!inTable(opName, opCodes)) {
         printError("Invalid operation name", getLineNumber(tokens));
+        if(parmString != NULL)
+            free(parmString);
+        free(opName);
+        freeTables(group1, group2, group3, opCodes);
         return EXIT_FAILURE;
     }
 
     /*Get src and dest for op*/
-    opCode = atoi(getCellData(opName, opCodes));
+    opCodeStr = getCellData(opName, opCodes);
+    opCode = atoi(opCodeStr);
+    free(opCodeStr);
+    
     src = NULL;
     dest = NULL;
     if(parmString != NULL)
@@ -153,36 +170,62 @@ int addOp(TokenLine* tokens, Table* codeTable, int labelFlag) {
     if(src != NULL)
         dest = strtok(NULL, " ,\t");
 
-    if(strtok(NULL, " ,\t") != NULL) {
+    if(dest != NULL && strtok(NULL, " ,\t") != NULL) {
         /*This means that there are 3 parameters*/
         printError("Invalid number of parameters for operation", getLineNumber(tokens));
+        if(parmString != NULL)
+            free(parmString);
+        free(opName);
+        freeTables(group1, group2, group3, opCodes);
         return EXIT_FAILURE;
     }
 
     /*Check number of parameters*/
     if(inTable(opName, group1) && (parmString == NULL || src == NULL || dest == NULL)){
         printError("Invalid number of parameters for operation", getLineNumber(tokens));
+        if(parmString != NULL)
+            free(parmString);
+        free(opName);
+        freeTables(group1, group2, group3, opCodes);
         return EXIT_FAILURE;
     }
     if(inTable(opName, group2) && (parmString == NULL || src == NULL || (dest != NULL && strlen(dest) != 0))){
         printError("Invalid number of parameters for operation", getLineNumber(tokens));
+        if(parmString != NULL)
+            free(parmString);
+        free(opName);
+        freeTables(group1, group2, group3, opCodes);
         return EXIT_FAILURE;
     }
     if(inTable(opName, group3) && ((src != NULL && strlen(src) != 0) || (dest != NULL && strlen(dest) != 0))){
         printError("Invalid number of parameters for operation", getLineNumber(tokens));
+        if(parmString != NULL)
+            free(parmString);
+        free(opName);
+        freeTables(group1, group2, group3, opCodes);
         return EXIT_FAILURE;
     }
 
     /*Get addressing types*/
     if(src != NULL){
         srcAddressType = getAddresingType(src, getLineNumber(tokens));
-        if(srcAddressType == -1)
+        if(srcAddressType == -1) {
+            if(parmString != NULL)
+                free(parmString);
+            free(opName);
+            freeTables(group1, group2, group3, opCodes);
             return EXIT_FAILURE;
+        }
     }
     if(dest != NULL){
         destAddressType = getAddresingType(dest, getLineNumber(tokens));
-        if(destAddressType == -1)
+        if(destAddressType == -1){
+            if(parmString != NULL)
+                free(parmString);
+            free(opName);
+            freeTables(group1, group2, group3, opCodes);
             return EXIT_FAILURE;
+        }
     }
 
     /*Check if the correct addresing types are used and add encodings to table*/
@@ -190,10 +233,18 @@ int addOp(TokenLine* tokens, Table* codeTable, int labelFlag) {
         /*Group 1 can accept all types as src (except lea which accepts only 3) and 3,5 as dest (excpet cmp which accepts all)*/
         if(!strcmp(opName, "lea") && srcAddressType != 3){
             printError("Invalid addressing type for operation", getLineNumber(tokens));
+            if(parmString != NULL)
+                free(parmString);
+            free(opName);
+            freeTables(group1, group2, group3, opCodes);
             return EXIT_FAILURE;
         }
         if(strcmp(opName, "cmp") && (destAddressType == 1)){
             printError("Invalid addressing type for operation", getLineNumber(tokens));
+            if(parmString != NULL)
+                free(parmString);
+            free(opName);
+            freeTables(group1, group2, group3, opCodes);
             return EXIT_FAILURE;
         }
         addOpEncoding(opCode, srcAddressType, destAddressType, codeTable);
@@ -220,6 +271,10 @@ int addOp(TokenLine* tokens, Table* codeTable, int labelFlag) {
         /*Group 2 can accept 3,5 as dest (excpet prn which can accept all)*/
         if(strcmp(opName, "prn") && (destAddressType == 1)){
             printError("Invalid addressing type for operation", getLineNumber(tokens));
+            if(parmString != NULL)
+                free(parmString);
+            free(opName);
+            freeTables(group1, group2, group3, opCodes);
             return EXIT_FAILURE;
         }
         addOpEncoding(opCode, 0, destAddressType, codeTable);
@@ -230,7 +285,20 @@ int addOp(TokenLine* tokens, Table* codeTable, int labelFlag) {
         addOpEncoding(opCode, 0, 0, codeTable);
     }
     
-    return 0;
+    if(parmString != NULL)
+        free(parmString);
+    free(opName);
+    freeTables(group1, group2, group3, opCodes);
+    return EXIT_SUCCESS;
+}
+
+/*Free all tables required for opEncoding all at once*/
+int freeTables(Table* table1, Table* table2, Table* table3, Table* table4){
+    freeTable(table1);
+    freeTable(table2);
+    freeTable(table3);
+    freeTable(table4);
+    return EXIT_SUCCESS;
 }
 
 /*Encode the op code in the code table*/
@@ -338,7 +406,7 @@ int addLabel(TokenLine* tokens, Table* symbolTable, int address) {
     if(label == NULL)
         return EXIT_FAILURE;
     
-    labelName = malloc(sizeof(char) * (strlen(label)-1));
+    labelName = malloc(sizeof(char) * (strlen(label)));
     if(labelName == NULL) {
         printError("Memory allocation failed", -1);
         return EXIT_FAILURE;

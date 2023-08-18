@@ -59,6 +59,7 @@ int assemble(char* name){
         printError("File not found", -1);
         return EXIT_FAILURE;
     }
+    free(asName);
 
     symbolTable = createTable();
     fileTable = createTable();
@@ -80,6 +81,7 @@ int assemble(char* name){
             return EXIT_FAILURE;
         amFile = fopen(amName, "w+");
         writeFileFromTableData(amFile, amTable);
+        free(amName);
 
         /*First pass*/
         rewind(amFile);
@@ -90,6 +92,8 @@ int assemble(char* name){
             rewind(amFile);
             secondPass(amFile, symbolTable, fileTable, externTable, entryTable);
         }
+
+        fclose(amFile);
     }
 
     if(hasErrors() == 0){
@@ -101,6 +105,7 @@ int assemble(char* name){
             extFile = fopen(extName, "w");
             writeFileFromTableData(extFile, externTable);
             fclose(extFile);
+            free(extName);
         }
         /*Save ent file if there are entry labels*/
         if(getTableSize(entryTable) > 0){
@@ -110,6 +115,7 @@ int assemble(char* name){
             entFile = fopen(entName, "w");
             writeFileFromTableData(entFile, entryTable);
             fclose(entFile);
+            free(entName);
         }
         /*Save ob file*/
         obName = addFileSuffix(name, ".ob");
@@ -123,9 +129,11 @@ int assemble(char* name){
         fprintf(obFile, "%d %d\n", ic-OFFSET, dc);
         writeFileFromTableData(obFile, encodedTable);
         fclose(obFile);
+        free(obName);
+        freeTable(encodedTable);
     }
 
-    fclose(asFile);
+    freeTable(amTable);
     freeTable(symbolTable);
     freeTable(fileTable);
     freeTable(externTable);
@@ -148,6 +156,9 @@ Table* encodeTableBase64(Table* table){
         base64 = base64Encode(lineData);
         addCell(lineName, base64Table);
         setCellData(lineName, base64, base64Table);
+        free(lineName);
+        free(lineData);
+        free(base64);
     }
 
     return base64Table;

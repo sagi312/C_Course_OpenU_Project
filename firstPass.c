@@ -92,6 +92,9 @@ int firstPass(FILE* file, Table* symbolTable, Table* fileTable, int* icOut, int*
         line = readLine(file);
     }
 
+    if(line != NULL)
+        free(line);
+
     if((ic + dc-OFFSET) > MAX_MEMORY_USE)
         printError("Assembly file will use too much memory", i);
 
@@ -216,7 +219,7 @@ int getStringWordCount(TokenLine* tokens, int labelFlag) {
 
 /*Connect the codeSymbolTable to the dataSymbolTable with the appropriate offsets*/
 int connectSymbolTables(Table* symbolTable, Table* codeSymbolTable, Table* dataSymbolTable, int ic) {
-    char *currCell, *currCellData;
+    char *currCell, *currCellData, *currCellDataOffset;
     int codeSize, dataSize, i;
 
     codeSize = getTableSize(codeSymbolTable);
@@ -227,20 +230,25 @@ int connectSymbolTables(Table* symbolTable, Table* codeSymbolTable, Table* dataS
         currCellData = getCellData(currCell, codeSymbolTable);
         addCell(currCell, symbolTable);
         setCellData(currCell, currCellData, symbolTable);
+        free(currCellData);
+        free(currCell);
     }
     for(i = 0; i < dataSize; i++) {
         currCell = getCellName(i, dataSymbolTable);
         currCellData = getCellData(currCell, dataSymbolTable);
-        currCellData = itoa(atoi(currCellData) + ic);
+        currCellDataOffset = itoa(atoi(currCellData) + ic);
         addCell(currCell, symbolTable);
         setCellData(currCell, currCellData, symbolTable);
+        free(currCellData);
+        free(currCellDataOffset);
+        free(currCell);
     }
     return EXIT_SUCCESS;
 }
 
 /*Connect the code table to the data table and save it in the fileTable*/
 int connectCodeTables(Table* fileTable, Table* codeTable, Table* dataTable, int ic) {
-    char *currCell, *currCellData;
+    char *currCell, *currCellOffset, *currCellData;
     int codeSize, dataSize, i;
 
     codeSize = getTableSize(codeTable);
@@ -251,13 +259,18 @@ int connectCodeTables(Table* fileTable, Table* codeTable, Table* dataTable, int 
         currCellData = getCellData(currCell, codeTable);
         addCell(currCell, fileTable);
         setCellData(currCell, currCellData, fileTable);
+        free(currCellData);
+        free(currCell);
     }
     for(i = 0; i < dataSize; i++) {
         currCell = getCellName(i, dataTable);
         currCellData = getCellData(currCell, dataTable);
-        currCell = itoa(atoi(currCell) + ic);
+        currCellOffset = itoa(atoi(currCell) + ic);
         addCell(currCell, fileTable);
         setCellData(currCell, currCellData, fileTable);
+        free(currCellData);
+        free(currCellOffset);
+        free(currCell);
     }
 
     return EXIT_SUCCESS;

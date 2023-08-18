@@ -63,13 +63,16 @@ int preAssemble(FILE* file, Table* fileTable){
         else{
             addLine(line, i, fileTable);
         }
+
         freeTokenLine(tokens);
+        if(secondField != NULL)
+            free(secondField);
+        free(line);
+
         line = readLine(file);
         i++;
     }
 
-    if(secondField != NULL)
-        free(secondField);
     if(currMacro != NULL){
         free(currMacro);
     }
@@ -121,17 +124,22 @@ int isMacro(TokenLine* line, int inMcro) {
 
 /*Check if a given token line is a valid macro end*/
 int isEndMacro(TokenLine* line, int inMcro) {
-    if(!strcmp(getTokenField(0, line), "endmcro")) {
+    char* firstField = getTokenField(0, line);
+    if(!strcmp(firstField, "endmcro")) {
         if(!inMcro){
             printError("End of macro while not in macro", getLineNumber(line));
+            free(firstField);
             return 0;
         }
         if(getTokenField(1, line) != NULL) {
             printError("Extra text after macro ending declaration", getLineNumber(line));
+            free(firstField);
             return 0;
         }
+        free(firstField);
         return 1;
     }
+    free(firstField);
     return 0;
 }
 
@@ -187,18 +195,22 @@ int replaceMacro(Table* fileTable, TokenLine* line){
 
 /*Check if a given token line is a valid macro use*/
 int isValidMacro(TokenLine* line, int inMcro){
-    if(inTable(getTokenField(0, line), macroTable)) {
+    char* firstField = getTokenField(0, line);
+    if(inTable(firstField, macroTable)) {
         if(inMcro) {
             printError("Nested macros aren't supported", getLineNumber(line));
+            free(firstField);
             return 0;
         }
         if(getTokenField(1, line) != NULL) {
             printError("Extra text after macro use", getLineNumber(line));
+            free(firstField);
             return 0;
         }
+        free(firstField);
         return 1;
     }
-    
+    free(firstField);
     return 0;
 }
 
