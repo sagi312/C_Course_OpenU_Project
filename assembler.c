@@ -7,67 +7,102 @@
 #include "typeChecker.h"
 
 
-int testPreAssemble(void);
 int testInput(void);
 int testFisrtPass(void);
+char* addFileSuffix(char* name, char* suffix);
+Table* encodeFileBase64(FILE* file, Table* table);
 
 int main(int argc, char* argv[]){
-    FILE* file = fopen("test3.txt", "r+");
+    FILE* file;
+    char *name;
+    int i;
 
-    assemble(file);
+    if(argc < 2){
+        printf("No file name given.\n");
+        return EXIT_FAILURE;
+    }
 
-    return 0;
-    /*return preAssemble(NULL);*/
+    for(i = 1; i < argc; i++){
+        name = argv[i];
+        if(name == NULL || strlen(name) < 1){
+            printf("Invalid parameter.\n");
+            return EXIT_FAILURE;
+        }
+        printf("Assembling file %s\n", name);
+        assemble(name);
+        if(hasErrors() == 0)
+            printf("File %s assembled successfully.\n", name);
+        printf("\n");
+        resetErrors();
+    }
+
+    return EXIT_SUCCESS;
 }  
 
-int assemble(FILE* file){
-    Table *symbolTable, *fileTable, *externTable, *entryTable;
-    FILE *asFile, *externFile, *entryFile, *obFile;
+int assemble(char* name){
+    Table *symbolTable, *amTable, *fileTable, *externTable, *entryTable, *encodedTable;
+    FILE *amFile, *asFile, *obFile, *entFile, *extFile;
+    int tableSize, i, ic, dc;
+    char *binary, *base64, *amName, *asName, *obName, *entName, *extName;
+
+    asName = addFileSuffix(name, ".as");
+    if(asName == NULL)
+        return EXIT_FAILURE;
+    asFile = fopen(asName, "r+");
+    if(asFile == 0){
+        printError("File not found", -1);
+        return EXIT_FAILURE;
+    }
 
     symbolTable = createTable();
     fileTable = createTable();
     externTable = createTable();
     entryTable = createTable();
+    amTable = createTable();
 
-    printf("Preassemble:\n");
-    asFile = preAssemble(file);
-    printf("Complete\n");
-    if(asFile == NULL){
+    if(preAssemble(asFile, amTable) == EXIT_FAILURE){
         return EXIT_FAILURE;
     }
-    rewind(asFile);
-    printf("File is %d\n", asFile);
-    printf("First pass:\n");
-    firstPass(asFile, symbolTable, fileTable);
-    printf("Complete\n");
+    fclose(asFile);
     if(hasErrors() == 0) {
-        printf("Second pass:\n");
-        rewind(asFile);
-        secondPass(asFile, symbolTable, fileTable, externTable, entryTable);
-        printf("Complete\n");
+        amName = addFileSuffix(name, ".am");
+        if(amName == NULL)
+            return EXIT_FAILURE;
+        amFile = fopen(amName, "w+");
+        writeFileFromTableData(amFile, amTable);
+        rewind(amFile);
+        firstPass(amFile, symbolTable, fileTable, &ic, &dc);
+        if(hasErrors() == 0) {
+            rewind(asFile);
+            secondPass(asFile, symbolTable, fileTable, externTable, entryTable);
+        }
     }
 
-    printf("Errors: %d\n", hasErrors());
-    printf("FILE TABLE:\n");
-    printTable(fileTable);
-    printf("externTable:\n");
-    printTable(externTable);
-    printf("entryTable:\n");
-    printTable(entryTable);
     if(hasErrors() == 0){
         if(getTableSize(externTable) > 0){
-            externFile = fopen("extern.txt", "w");
-            writeFileFromTableData(externFile, externTable, 1);
-            fclose(externFile);
+            extName = addFileSuffix(name, ".ext");
+            if(extName == NULL)
+                return EXIT_FAILURE;
+            extFile = fopen(extName, "w");
+            writeFileFromTableData(extFile, externTable);
+            fclose(extFile);
         }
         if(getTableSize(entryTable) > 0){
-            entryFile = fopen("entry.txt", "w");
-            writeFileFromTableData(entryFile, entryTable, 1);
-            fclose(entryFile);
+            entName = addFileSuffix(name, ".ent");
+            if(entName == NULL)
+                return EXIT_FAILURE;
+            entFile = fopen(entName, "w");
+            writeFileFromTableData(entFile, entryTable);
+            fclose(entFile);
         }
         if(getTableSize(fileTable) > 0){
-            obFile = fopen("ob.txt", "w");
-            writeFileFromTableData(obFile, fileTable, 1);
+            obName = addFileSuffix(name, ".ob");
+            if(obName == NULL)
+                return EXIT_FAILURE;
+            obFile = fopen(obName, "w");
+            encodedTable = encodeFileBase64(asFile, fileTable);
+            fprintf(obFile, "%d %d\n", ic-OFFSET, dc);
+            writeFileFromTableData(obFile, encodedTable);
             fclose(obFile);
         }
     }
@@ -79,6 +114,36 @@ int assemble(FILE* file){
     freeTable(entryTable);
 
     return EXIT_SUCCESS;
+}
+
+Table* encodeFileBase64(FILE* file, Table* table){
+    Table* base64Table = createTable();
+    char* lineName, *lineData, *base64;
+    int i, size;
+
+    size = getTableSize(table);
+
+    for(i = 0; i < size; i++){
+        lineName = getCellName(i, table);
+        lineData = getCellData(lineName, table);
+        base64 = base64Encode(lineData);
+        addCell(lineName, base64Table);
+        setCellData(lineName, base64, base64Table);
+    }
+
+    return base64Table;
+}
+
+char* addFileSuffix(char* name, char* suffix){
+    char* newName;
+    newName = malloc(strlen(name) + strlen(suffix) + 1);
+    if(newName == NULL){
+        printError("Memory allocation failed", -1);
+        return NULL;
+    }
+    strcpy(newName, name);
+    strcat(newName, suffix);
+    return newName;
 }
 
 int testFirstPass(void) {
@@ -149,11 +214,5 @@ int testInput(void){
         line = readLine(file);
     }
 
-    return 0;
-}
-
-int testPreAssemble(void){
-    FILE* file = fopen("test.txt", "r");
-    preAssemble(file);
     return 0;
 }

@@ -8,10 +8,8 @@
 #define NUMBER_OF_DIGITS(x) (int)(ceil(log10(x))+1)
 
 Table *reservedWordsTable, *macroTable;
-FILE* preAssemble(FILE* file){
-    Table* fileTable = createTable();
+int preAssemble(FILE* file, Table* fileTable){
     TokenLine* tokens;
-    FILE* output;
     char *line, *currMacro, *secondField;
     int inMcro, i;
     char* invalidWords[] = RESERVED_NAMES;
@@ -31,6 +29,10 @@ FILE* preAssemble(FILE* file){
     line = readLine(file);
     currMacro = secondField = NULL;
     while(line != NULL && strlen(line) > 0){
+        if(strlen(line) > MAX_LINE_LENGTH){
+            if(strlen(line) == MAX_LINE_LENGTH+1 && line[strlen(line)] != '\n')
+                printError("Line is too long", i);
+        }
         tokens = tokenizeLine(line, i);
         secondField = getTokenField(1, tokens);
         if(isValidMacro(tokens, inMcro)){
@@ -55,11 +57,6 @@ FILE* preAssemble(FILE* file){
         i++;
     }
 
-    if(!hasErrors()) {
-        output = fopen("output.txt", "w+");
-        writeFileFromTableData(output, fileTable, 1);
-    }
-
     if(secondField != NULL)
         free(secondField);
     if(currMacro != NULL){
@@ -67,15 +64,14 @@ FILE* preAssemble(FILE* file){
     }
     if(line != NULL)
         free(line);
-    freeTable(fileTable);
+
     freeTable(reservedWordsTable);
     freeTable(macroTable);
     
-
     if(hasErrors())
-        return NULL;
+        return EXIT_FAILURE;
 
-    return output;
+    return EXIT_SUCCESS;
 }
 
 int isMacro(TokenLine* line, int inMcro) {

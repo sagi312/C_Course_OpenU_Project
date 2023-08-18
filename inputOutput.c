@@ -33,7 +33,7 @@ char* readLine(FILE* file){
                 fprintf(stderr, "Error: Memory allocation failed.\n");
                 free(tmp);
                 free(buffer);
-                return 0;
+                return NULL;
             }
             buffer = tmp;
         }
@@ -54,6 +54,7 @@ char* readLine(FILE* file){
         buffer = tmp;
     }
     buffer[i] = '\0';
+    
     return buffer;
 }
 
@@ -115,13 +116,11 @@ int printTokenLine(TokenLine* line){
     return 1;
 }
 
-int writeFileFromTableData(FILE* file, Table* table, int doRewind){
+int writeFileFromTableData(FILE* file, Table* table){
     int tableSize = getTableSize(table);
     int i;
     char *cellName, *cellData;
 
-    if(doRewind)
-        rewind(file);
     
     for(i = 0; i < tableSize; i++){
         cellName = getCellName(i, table);
@@ -176,6 +175,116 @@ void printError(char* error, int lineNumber) {
 
 int hasErrors(void) {
     return errorFlag;
+}
+
+int resetErrors(void){
+    return errorFlag = 0;
+}
+
+char* base64Encode(char* binary){
+    /*split into 2 groups of 6 bits, convery to integer and translate to corrospounding char*/
+    char* group1, *group2, *res;
+    int i, dec;
+
+    if(binary == NULL || strlen(binary) != 12)
+        return NULL;
+
+    group1 = malloc(7*sizeof(char));
+    group2 = malloc(7*sizeof(char));
+    res = malloc(3*sizeof(char));
+
+    if(group1 == NULL || group2 == NULL || res == NULL){
+        printError("Memory allocation failed", -1);
+        if(group1 != NULL)
+            free(group1);
+        if(group2 != NULL)
+            free(group2);
+        if(res != NULL)
+            free(res);
+        return NULL;
+    }
+
+    for(i = 0; i < 6; i++){
+        group1[i] = binary[i];
+        group2[i] = binary[i+6];
+    }
+
+    group1[6] = '\0';
+    group2[6] = '\0';
+
+    dec = btoiUnsigned(group1);
+    res[0] = itob64(dec);
+    dec = btoiUnsigned(group2);
+    res[1] = itob64(dec);
+    res[2] = '\0';
+
+    free(group1);
+    free(group2);
+    return res;
+}
+
+char itob64(int dec){
+    char res;
+    if(dec >= 0 && dec <= 25)
+        return (char)(dec + 'A');
+    else if(dec >= 26 && dec <= 51)
+        return (char)(dec - 26 + 'a');
+    else if(dec >= 52 && dec <= 61)
+        return (char)(dec - 52 + '0');
+    else if(dec == 62)
+        return '+';
+    else if(dec == 63)
+        return '/';
+    else
+        return '\0';
+}
+
+int btoiUnsigned(char* binary){
+    int res = 0, i = 0, length = 0;
+    if(binary == NULL || strlen(binary) < 1)
+        return 0;
+
+    length = strlen(binary);
+    for(i = 0; i < length; i++){
+        if(binary[length-1-i] == '1')
+            res += pow(2, i);
+    }
+    return res;
+}
+
+int btoi(char* binary){
+    int res = 0, i = 0, length = 0, sign = 1;
+    if(binary == NULL || strlen(binary) < 1)
+        return 0;
+
+    length = strlen(binary);
+    /*If negetive, we need to flip all bits, add 1, convert to decimal and convert to negetive*/
+    if(binary[0] == '1'){
+        sign = -1;
+        for(i = 0; i < length; i++){
+            if(binary[i] == '1')
+                binary[i] = '0';
+            else
+                binary[i] = '1';
+        }
+        /*Add 1*/
+        i = 0;
+        while(i < length && binary[length-1-i] == '1'){
+            binary[length-1-i] = '0';
+            i++;
+        }
+        if(i < 12)
+            binary[length-1-i] = '1';
+        else
+            binary[length-1-i] = '0';
+    }
+
+    for(i = 0; i < length; i++){
+        if(binary[length-1-i] == '1')
+            res += pow(2, i);
+    }
+
+    return res * sign;
 }
 
 char* itob(int num){

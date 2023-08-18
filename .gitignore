@@ -58,3 +58,8 @@ dkms.conf
 assembler
 *.txt
 core
+*.ent
+*.ext
+*.ob
+*.am
+*.as
