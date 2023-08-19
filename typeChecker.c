@@ -7,25 +7,34 @@
 
 InstructionType getInstructType(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable, int labelFlag) {
     Table* opTable = createTable();
+    InstructionType type;
     int i;
-    char* opNames[] = OP_NAMES;
+    char *opNames[] = OP_NAMES, *firstField = getTokenField(0, tokens);
 
     for(i = 0; i < OP_NAMES_COUNT; i++) {
         addCell(opNames[i], opTable);
     }
-    if(isComment(tokens))
-        return Comment;
-    if(isData(tokens, labelFlag))
-        return Data;
-    if(isString(tokens, labelFlag))
-        return String;
-    if(isExtern(tokens, labelFlag))
-        return Extern;
-    if(isEntry(tokens, labelFlag))
-        return Entry;
-    if(hasOp(tokens, opTable, labelFlag))
-        return Op;
-    return -1;
+    if(firstField == NULL || strlen(firstField) == 0)
+        type = Comment; /*Empty line*/
+    else if(isComment(tokens))
+        type = Comment;
+    else if(isData(tokens, labelFlag))
+        type = Data;
+    else if(isString(tokens, labelFlag))
+        type = String;
+    else if(isExtern(tokens, labelFlag))
+        type = Extern;
+    else if(isEntry(tokens, labelFlag))
+        type = Entry;
+    else if(hasOp(tokens, opTable, labelFlag))
+        type = Op;
+    else
+        type = -1;
+    
+    freeTable(opTable);
+    if(firstField != NULL)
+        free(firstField);
+    return type;
 }
 
 /*Check if a line is a comment*/
@@ -51,7 +60,7 @@ int hasLabel(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable){
 
     if(firstField[strlen(firstField) - 1] == ':') {
         
-        name = malloc(sizeof(char) * (strlen(firstField)-1));
+        name = malloc(sizeof(char) * (strlen(firstField)));
         if(name == NULL) {
             printError("Memory allocation failed", -1);
             return EXIT_FAILURE;
@@ -66,6 +75,8 @@ int hasLabel(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable){
         }
         if(inTable(name, codeSymbolTable) || inTable(name, dataSymbolTable)){
             printError("Label already exists", getLineNumber(tokens));
+            free(name);
+            free(firstField);
             return -1;
         }
         free(name);
@@ -79,6 +90,9 @@ int hasLabel(TokenLine* tokens, Table* codeSymbolTable, Table* dataSymbolTable){
 
 int isValidLabel(char* label, int lineNum, int printErrors) {
     int length, i;
+    char* reservedWords[] = RESERVED_NAMES;
+    Table* reservedWordsTable;
+
     if(label == NULL)
         return 0;
 
@@ -101,6 +115,19 @@ int isValidLabel(char* label, int lineNum, int printErrors) {
         }
     }
 
+    /*Check for reserved words*/
+    reservedWordsTable = createTable();
+    for(i = 0; i < RESERVED_NAMES_COUNT; i++) {
+        addCell(reservedWords[i], reservedWordsTable);
+    }
+    if(inTable(label, reservedWordsTable)) {
+        if(printErrors)
+            printError("Label cannot be a reserved word", lineNum);
+        freeTable(reservedWordsTable);
+        return 0;
+    }
+
+    freeTable(reservedWordsTable);
     return 1;
 }
 
@@ -148,20 +175,20 @@ int isData(TokenLine* tokens, int labelFlag){
             printWarning("Data declaration without data", getLineNumber(tokens));
             free(dataDeclearation);
             free(numberString);
-            return 0;
+            return 1;
         }
         if(isNum(num) == 0) {
             printError("Data declaration must contain only numbers", getLineNumber(tokens));
             free(dataDeclearation);
             free(numberString);
-            return 0;
+            return -1;
         }
         while((num = strtok(NULL, ", \t")) != NULL){
             if(isNum(num) == 0) {
                 printError("Data declaration must contain only numbers", getLineNumber(tokens));
                 free(dataDeclearation);
                 free(numberString);
-                return 0;
+                return -1;
             }
         }
         free(dataDeclearation);
@@ -198,7 +225,7 @@ int isString(TokenLine* tokens, int labelFlag) {
             printError("Invalid string in string declaration", getLineNumber(tokens));
             free(stringDeclearation);
             free(string);
-            return 0;
+            return -1;
         }
         free(stringDeclearation);
         free(string);
@@ -315,16 +342,11 @@ int isNum(char* num) {
 }
 
 int isStringParm(char* string){
-    int i;
     if(string == NULL)
         return 0;
     if(string[0] != '"' || string[strlen(string)-1] != '"')
         return 0;
-    for(i = 1; i < strlen(string); i++) {
-        /*ASCII printable characters are represented by codes 32 to 126*/
-        if((int)string[i] < 32 || (int)string[i] > 126)
-            return 0;
-    }
+    /*The ascii printable chars check will be performed when encoding the string*/
     return 1;
 }
 
@@ -337,11 +359,13 @@ char* getParmString(int lastField, TokenLine* tokens) {
         return NULL;
         
     while((nextField = getTokenField(++lastField, tokens)) != NULL) {
-        parmString = realloc(parmString, sizeof(char) * (strlen(parmString) + strlen(nextField)));
+        /*We need to allocate enough space for parmString + space + nextField + /0*/
+        parmString = realloc(parmString, sizeof(char) * (strlen(parmString) + strlen(nextField) + 2));
         if(parmString == NULL){
             printError("Memory allocation failed", getLineNumber(tokens));
             return NULL;
         }
+        strcat(parmString, " ");
         strcat(parmString, nextField);
         free(nextField);
     }

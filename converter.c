@@ -162,12 +162,12 @@ char* itob(int num){
 /*convert an int to a string representation*/
 char* itoa(int num){
     char* res;
-    int size = 0;
+    int size;
     if(num < 0)
-        size = NUMBER_OF_DIGITS(num * -1) + 2;
-    else if(num != 0)
-        size = NUMBER_OF_DIGITS(num) + 1;
-    res = malloc(sizeof(char) * size);
+        size = NUMBER_OF_DIGITS(num) + 2; /*number of digis + space for - and /0*/
+    else
+        size = NUMBER_OF_DIGITS(num) + 1; /*number of digis + space for /0*/
+    res = malloc(sizeof(char) * (size));
     if(res == NULL) {
         printError("Memory allocation failed", -1);
         return NULL;

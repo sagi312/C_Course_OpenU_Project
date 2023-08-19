@@ -15,6 +15,7 @@ char* getCellData(char* name, Table* table);            /*Gets the data of a cel
 char* getCellName(int index, Table* table);             /*Gets the name of a cell in a given index*/
 int removeCell(char* name, Table* table);               /*Removes a cell from the table*/
 int inTable(char* name, Table* table);                  /*Checks if a cell is in the table*/
+int inTableData(char* data, Table* table);                  /*Checks if a data is in the table*/
 int getTableSize(Table* table);                         /*Gets the size of the table*/
 int freeTable(Table* table);                            /*Frees the table*/
 int printTable(Table* table);                           /*Prints the table*/

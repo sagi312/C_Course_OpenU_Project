@@ -55,7 +55,12 @@ char* readLine(FILE* file){
         buffer = tmp;
     }
     buffer[i] = '\0';
-    
+
+    /*Finished reading file*/
+    if(c == EOF && i == 0){
+        free(buffer);
+        return NULL;
+    }
     return buffer;
 }
 
@@ -83,7 +88,7 @@ TokenLine* tokenizeLine(char* line, int lineNumber) {
     if(i == NUMBER_OF_FIELDS-2 && tokens->fields[i] != NULL)
         tokens->fields[++i] = strdup(strtok(NULL, ""));
     else {
-        while(i < NUMBER_OF_FIELDS){
+        while(i < NUMBER_OF_FIELDS-1){
             tokens->fields[++i] = NULL;
         }
     }
@@ -144,8 +149,11 @@ int writeFileFromTableData(FILE* file, Table* table){
     for(i = 0; i < tableSize; i++){
         cellName = getCellName(i, table);
         cellData = getCellData(cellName, table);
-        if(cellData != NULL)
+        if(cellData != NULL) {
             fprintf(file, "%s\n", cellData);
+            free(cellData);
+        }
+        free(cellName);
     }
     fflush(file);
     return 1;
@@ -162,7 +170,7 @@ void printWarning(char* warning, int lineNumber) {
 /*Use to keep track if there was an error printed*/
 int errorFlag = 0;
 
-/*Print an error*/
+/*Print an error. I choose to print to stderr instead of stdout as allowed in the course forum.*/
 void printError(char* error, int lineNumber) {
     errorFlag = 1;
     if(lineNumber == -1)

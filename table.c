@@ -76,6 +76,9 @@ int setCellData(char* name, char* data, Table* table){
     /*Loop until last cell or found entry*/
     while(pointer != NULL){
         if(!strcmp(pointer->cellName, name)){
+            if(pointer->cellData != NULL)
+                free(pointer->cellData); /*Free previous data*/
+                
             pointer->cellData = strdup(data);
             if(pointer->cellData == NULL){
                 fprintf(stderr, "Error: Memory allocation failed.\n");
@@ -182,6 +185,26 @@ int inTable(char* name, Table* table) {
     /*Loop until last cell or found entry*/
     while(pointer != NULL){
         if(!strcmp(pointer->cellName, name)){
+            return 1;
+        }
+        pointer = pointer->nextCell;
+    }
+
+    return 0;
+}
+
+/*Check if a cell is in a table as data*/
+int inTableData(char* data, Table* table) {
+    /*To loop on table*/
+    Table* pointer = table;
+
+    if(table == NULL){
+        return 0;
+    }
+    
+    /*Loop until last cell or found entry*/
+    while(pointer != NULL){
+        if(pointer->cellData != NULL && !strcmp(pointer->cellData, data)) {
             return 1;
         }
         pointer = pointer->nextCell;

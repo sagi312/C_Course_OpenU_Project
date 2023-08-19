@@ -7,13 +7,9 @@
 #include "firstPass.h"
 #include "secondPass.h"
 
-/*Add a suffix to a given file name*/
-char* addFileSuffix(char* name, char* suffix);
-
-/*Encode a file table to base 64 assuming it is in binary format*/
+/*Local functions*/
+char* addFileSuffix(char* name, char* suffix); 
 Table* encodeTableBase64(Table* table);
-
-/*Assemble a file to .ob, .ent and .ext files*/
 int assemble(char* name);
 
 /*This function will assemble which file given to it as an argument*/
@@ -59,6 +55,7 @@ int assemble(char* name){
         printError("File not found", -1);
         return EXIT_FAILURE;
     }
+    free(asName);
 
     symbolTable = createTable();
     fileTable = createTable();
@@ -68,6 +65,12 @@ int assemble(char* name){
 
     /*Preassemble*/
     if(preAssemble(asFile, amTable) == EXIT_FAILURE){
+        fclose(asFile);
+        freeTable(symbolTable);
+        freeTable(fileTable);
+        freeTable(externTable);
+        freeTable(entryTable);
+        freeTable(amTable);
         return EXIT_FAILURE;
     }
     fclose(asFile);
@@ -76,10 +79,18 @@ int assemble(char* name){
 
         /*Save preassembled file*/
         amName = addFileSuffix(name, ".am");
-        if(amName == NULL)
+        if(amName == NULL) {
+            freeTable(symbolTable);
+            freeTable(fileTable);
+            freeTable(externTable);
+            freeTable(entryTable);
+            freeTable(amTable);
             return EXIT_FAILURE;
+        }
         amFile = fopen(amName, "w+");
         writeFileFromTableData(amFile, amTable);
+        free(amName);
+        freeTable(amTable);
 
         /*First pass*/
         rewind(amFile);
@@ -90,31 +101,48 @@ int assemble(char* name){
             rewind(amFile);
             secondPass(amFile, symbolTable, fileTable, externTable, entryTable);
         }
+
+        fclose(amFile);
     }
+
+    freeTable(symbolTable);
 
     if(hasErrors() == 0){
         /*Save ext file if there are extern labels*/
         if(getTableSize(externTable) > 0){
             extName = addFileSuffix(name, ".ext");
-            if(extName == NULL)
+            if(extName == NULL) {
+                freeTable(entryTable);
+                freeTable(externTable);
+                freeTable(fileTable);
                 return EXIT_FAILURE;
+            }
             extFile = fopen(extName, "w");
             writeFileFromTableData(extFile, externTable);
             fclose(extFile);
+            free(extName);
         }
+        freeTable(externTable);
         /*Save ent file if there are entry labels*/
         if(getTableSize(entryTable) > 0){
             entName = addFileSuffix(name, ".ent");
-            if(entName == NULL)
+            if(entName == NULL) {
+                freeTable(entryTable);
+                freeTable(fileTable);
                 return EXIT_FAILURE;
+            }
             entFile = fopen(entName, "w");
             writeFileFromTableData(entFile, entryTable);
             fclose(entFile);
+            free(entName);
         }
+        freeTable(entryTable);
         /*Save ob file*/
         obName = addFileSuffix(name, ".ob");
-        if(obName == NULL)
+        if(obName == NULL) {
+            freeTable(fileTable);
             return EXIT_FAILURE;
+        }
         obFile = fopen(obName, "w");
         
         /*Encode table*/
@@ -123,13 +151,16 @@ int assemble(char* name){
         fprintf(obFile, "%d %d\n", ic-OFFSET, dc);
         writeFileFromTableData(obFile, encodedTable);
         fclose(obFile);
+        free(obName);
+        freeTable(encodedTable);
+        freeTable(fileTable);
     }
-
-    fclose(asFile);
-    freeTable(symbolTable);
-    freeTable(fileTable);
-    freeTable(externTable);
-    freeTable(entryTable);
+    else{
+        freeTable(fileTable);
+        freeTable(entryTable);
+        freeTable(externTable);
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
@@ -148,6 +179,9 @@ Table* encodeTableBase64(Table* table){
         base64 = base64Encode(lineData);
         addCell(lineName, base64Table);
         setCellData(lineName, base64, base64Table);
+        free(lineName);
+        free(lineData);
+        free(base64);
     }
 
     return base64Table;
