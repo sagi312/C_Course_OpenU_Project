@@ -170,7 +170,7 @@ void printWarning(char* warning, int lineNumber) {
 /*Use to keep track if there was an error printed*/
 int errorFlag = 0;
 
-/*Print an error*/
+/*Print an error. I choose to print to stderr instead of stdout as allowed in the course forum.*/
 void printError(char* error, int lineNumber) {
     errorFlag = 1;
     if(lineNumber == -1)

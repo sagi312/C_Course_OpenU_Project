@@ -7,13 +7,9 @@
 #include "firstPass.h"
 #include "secondPass.h"
 
-/*Add a suffix to a given file name*/
-char* addFileSuffix(char* name, char* suffix);
-
-/*Encode a file table to base 64 assuming it is in binary format*/
+/*Local functions*/
+char* addFileSuffix(char* name, char* suffix); 
 Table* encodeTableBase64(Table* table);
-
-/*Assemble a file to .ob, .ent and .ext files*/
 int assemble(char* name);
 
 /*This function will assemble which file given to it as an argument*/

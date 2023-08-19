@@ -359,12 +359,13 @@ char* getParmString(int lastField, TokenLine* tokens) {
         return NULL;
         
     while((nextField = getTokenField(++lastField, tokens)) != NULL) {
-        /*We need to allocate enough space for parmString + nextField + /0*/
-        parmString = realloc(parmString, sizeof(char) * (strlen(parmString) + strlen(nextField) + 1));
+        /*We need to allocate enough space for parmString + space + nextField + /0*/
+        parmString = realloc(parmString, sizeof(char) * (strlen(parmString) + strlen(nextField) + 2));
         if(parmString == NULL){
             printError("Memory allocation failed", getLineNumber(tokens));
             return NULL;
         }
+        strcat(parmString, " ");
         strcat(parmString, nextField);
         free(nextField);
     }
