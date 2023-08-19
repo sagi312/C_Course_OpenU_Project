@@ -1,4 +1,4 @@
-FLAGS = -Wall -ansi -pedantic -g
+FLAGS = -Wall -ansi -pedantic
 
 assembler: assembler.o table.o inputOutput.o preassembler.o firstPass.o typeChecker.o secondPass.o encoder.o converter.o stringUtils.o
 	gcc -o assembler $(FLAGS) $^ -lm 
