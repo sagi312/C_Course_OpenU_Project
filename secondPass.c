@@ -24,7 +24,7 @@ int secondPass(FILE* file, Table* symbolTable, Table* fileTable, Table* externTa
 /*Replace all of the label placeholders with the correct addresses, and save the extern labels to their table*/
 int replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
     int size, addressType, encodingInt, i;
-    char *labelName, *labelEncoding, *labelAddress, *line;
+    char *labelName, *labelEncoding, *labelAddress, *line, *error;
 
     size = getTableSize(fileTable);
     encodingInt = 0;
@@ -34,7 +34,16 @@ int replaceLabels(Table* symbolTable, Table* fileTable, Table* externTable){
         /*Easy way to check if it's a label or an encoded binary word is to check if first char is a 0 or 1*/
         if(labelName[0] != '0' && labelName[0] != '1'){
             if(!inTable(labelName, symbolTable)){
-                printError("Label is not defined", i);
+                error = malloc(strlen(labelName) + strlen("Label  is not defined") + 1);
+                if(error == NULL){
+                    printError("Memory allocation failed", -1);
+                    free(line);
+                    free(labelName);
+                    return EXIT_FAILURE;
+                }
+                sprintf(error, "Label %s is not defined", labelName);
+                printError(error, -1);
+                free(error);
                 free(line);
                 free(labelName);
                 return EXIT_FAILURE;
