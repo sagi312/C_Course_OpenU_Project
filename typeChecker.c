@@ -353,21 +353,34 @@ int isStringParm(char* string){
 
 /*Get the parameter string for the instruction lines*/
 char* getParmString(int lastField, TokenLine* tokens) {
-    char* parmString = getTokenField(++lastField, tokens), *nextField;
+    char *parmString, *originalLine;
 
-    if(parmString == NULL)
+    originalLine = getOriginalLine(tokens);
+    if(originalLine == NULL)
         return NULL;
-        
-    while((nextField = getTokenField(++lastField, tokens)) != NULL) {
-        /*We need to allocate enough space for parmString + space + nextField + /0*/
-        parmString = realloc(parmString, sizeof(char) * (strlen(parmString) + strlen(nextField) + 2));
-        if(parmString == NULL){
-            printError("Memory allocation failed", getLineNumber(tokens));
-            return NULL;
-        }
-        strcat(parmString, " ");
-        strcat(parmString, nextField);
-        free(nextField);
+
+    /*Error, last field can't be less then 0*/
+    if(lastField < 0) {
+        free(originalLine);
+        return NULL;
     }
+    
+    /*Skip first field*/
+    parmString = strdup(strtok(originalLine, " \t"));
+
+    /*Skip fields until last field*/
+    while(lastField > 0 && parmString != NULL) {
+        free(parmString);
+        parmString = strdup(strtok(NULL, " \t"));
+        lastField--;
+    }
+
+    /*Free last parmString (or first if lastField == 0 and the loop wasn't entered)*/
+    free(parmString);
+
+    /*Get rest of the string*/
+    parmString = strdup(strtok(NULL, ""));
+
+    free(originalLine);
     return parmString;
 }

@@ -10,6 +10,7 @@ struct TokenLine
 {
     int lineNumber;
     char* fields[NUMBER_OF_FIELDS];
+    char* originalLine;
 };
 
 /*Read a line dynammicly from file*/
@@ -92,6 +93,7 @@ TokenLine* tokenizeLine(char* line, int lineNumber) {
             tokens->fields[++i] = NULL;
         }
     }
+    tokens->originalLine = strdup(line);
 
     free(tmp);
     return tokens;
@@ -104,6 +106,8 @@ int freeTokenLine(TokenLine* line){
         if(line->fields[i] != NULL)
             free(line->fields[i]);
     }
+    if(line->originalLine != NULL)
+        free(line->originalLine);
     free(line);
     return 1;
 }
@@ -137,6 +141,13 @@ char* getTokenField(int num, TokenLine* line) {
 /*Get the line number from a token field*/
 int getLineNumber(TokenLine* line) {
     return line->lineNumber;
+}
+
+/*Get the original line from a token field*/
+char* getOriginalLine(TokenLine* line) {
+    char* res;
+    res = strdup(line->originalLine);
+    return res;
 }
 
 /*Write all the cells' data in the table to a file*/

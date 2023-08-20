@@ -21,6 +21,7 @@ int printTokenLine(TokenLine* line);
 char* getTokenField(int num, TokenLine* line);
 /*Get the line number from a token field*/
 int getLineNumber(TokenLine* line);
+char* getOriginalLine(TokenLine* line);
 
 /*Write all the cells' data in the table to a file*/
 int writeFileFromTableData(FILE* file, Table* table);
